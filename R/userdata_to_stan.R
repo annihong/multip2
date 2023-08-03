@@ -54,12 +54,12 @@ format_covariates <- function(t, H, n, covariates) {
                 rho_covariates=covariates_stan$reciprocity,
                 cross_mu_covariates=covariates_stan$cross_density, 
                 cross_rho_covariates=covariates_stan$cross_reciprocity,
-                alpha_covariates_S = array(apply(covariates_stan$senders, 2, sd)),
-                beta_covariates_S = array(apply(covariates_stan$receivers, 2, sd)),
-                mu_covariates_S = array(apply(covariates_stan$density, 3, sd)),
-                rho_covariates_S = array(apply(covariates_stan$reciprocity, 3, sd)),
-                cross_mu_covariates_S = array(apply(covariates_stan$cross_density, 3, sd)),
-                cross_rho_covariates_S = array(apply(covariates_stan$cross_reciprocity, 3, sd))
+                alpha_covariates_S = array(apply(covariates_stan$senders, 2, stats::sd)),
+                beta_covariates_S = array(apply(covariates_stan$receivers, 2, stats::sd)),
+                mu_covariates_S = array(apply(covariates_stan$density, 3, stats::sd)),
+                rho_covariates_S = array(apply(covariates_stan$reciprocity, 3, stats::sd)),
+                cross_mu_covariates_S = array(apply(covariates_stan$cross_density, 3, stats::sd)),
+                cross_rho_covariates_S = array(apply(covariates_stan$cross_reciprocity, 3, stats::sd))
                 )
             )
 
