@@ -82,6 +82,7 @@ format_network <- function(M) {
     y = matrix_to_dyads_nd(M) # observed networks as dyadic outcomes
 
     network_data = list(n=n, N=N, T=t, H=H, layer_pairs=pairs,y_obs=y, K=K, N_obs = length(y),obs_idx = 1:N)
+
     return(network_data)
 }
 
@@ -98,4 +99,6 @@ stan_data <- function(M, covariates) {
     stan_data <- append(network_data, covariates_data)
     return(stan_data)
 }
+
+
 
