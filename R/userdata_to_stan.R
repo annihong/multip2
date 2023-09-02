@@ -1,9 +1,61 @@
+covariates_helper <- function(t, H, covars, network_data, actor_data) {
+    #govt_s = list(var_name = "senders", t_or_h = 1, is_within = T, value = types)
+    create_covar <- function(var_name, t_or_h, is_within, value) {
+        return(list(var_name=var_name, t_or_h=t_or_h, is_within=is_within, value=value))
+    }
+    covariates = list()
+
+    var_name = "senders"
+    for (covar in covars[[var_name]]) {
+        res = lapply(1:t, create_covar, var_name=var_name, is_within=TRUE, value=actor_data[covar])
+        names(res) = paste(covar, 1:t, sep="_")
+        covariates = append(covariates, res)
+    }
+
+    var_name = "receivers"
+    for (covar in covars[[var_name]]) {
+        res = lapply(1:t, create_covar, var_name=var_name, is_within=TRUE, value=actor_data[covar])
+        names(res) = paste(covar, 1:t, sep="_")
+        covariates = append(covariates, res)
+    }
+
+    var_name = "density"
+    for (covar in covars[[var_name]]) {
+        res = lapply(1:t, create_covar, var_name=var_name, is_within=TRUE, value=network_data[[covar]])
+        names(res) = paste(covar, 1:t, sep="_")
+        covariates = append(covariates, res)
+    }
+
+    var_name = "reciprocity"
+    for (covar in covars[[var_name]]) {
+        res = lapply(1:t, create_covar, var_name=var_name, is_within=TRUE, value=network_data[[covar]])
+        names(res) = paste(covar, 1:t, sep="_")
+        covariates = append(covariates, res)
+    }
+
+    var_name = "cross_density"
+    for (covar in covars[[var_name]]) {
+        res = lapply(1:H, create_covar, var_name=var_name, is_within=FALSE, value=network_data[[covar]])
+        names(res) = paste(covar, 1:H, sep="_")
+        covariates = append(covariates, res)
+    }
+
+    var_name = "cross_reciprocity"
+    for (covar in covars[[var_name]]) {
+        res = lapply(1:H, create_covar, var_name=var_name, is_within=FALSE, value=network_data[[covar]])
+        names(res) = paste(covar, 1:H, sep="_")
+        covariates = append(covariates, res)
+    }
+
+    return(covariates)
+}
+
 #' Format covariates data for stan estimation
 #' 
 #' @param t T: number of layers in the multiplex network
 #' @param H number of pairs of layers
 #' @param n number of actors
-#' @param covariates list of all the formatted covariates: list(is_within = {T, F}, t_or_h, var_name, value) (still need a function for this)
+#' @param covars 
 #'
 #' @return A list of covariates formatted to be estimated via multiplex_p2.stan 
 #' @export
@@ -35,6 +87,7 @@ format_covariates <- function(t, H, n, covariates) {
             t = covariate$t_or_h
             D_within[t, var_name] = D_within[t, var_name] + 1
             if (sum(dim(value)) == 2*n) { #dyadic covar
+                print(covariates_stan[[var_name]])
                 covariates_stan[[var_name]] <- abind::abind(covariates_stan[[var_name]], value, along = 3)
             } else { # actor covar 
                 covariates_stan[[var_name]] <- cbind(covariates_stan[[var_name]], value)
@@ -43,6 +96,7 @@ format_covariates <- function(t, H, n, covariates) {
         } else {
             h = covariate$t_or_h
             D_cross[h, var_name] = D_cross[h, var_name] + 1
+            print(value)
             covariates_stan[[var_name]] <- abind::abind(covariates_stan[[var_name]], value, along = 3)
         }
     }
@@ -71,6 +125,8 @@ format_covariates <- function(t, H, n, covariates) {
 #' 
 #' @param M list of the observed networks in adjacency matrix form
 #' @return list of formatted network related data to feed to Stan of the form list(n=n, N=N, T=t, H=H, layer_pairs=pairs,y_obs=y, K=K, N_obs = length(y),obs_idx = 1:N)
+#' @export
+#'
 
 format_network <- function(M) {
     n = nrow(M[[1]]) # number of actors
