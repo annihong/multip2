@@ -23,7 +23,9 @@ MultiP2Fit <- function(network_data,
                      reciprocity_covar = NULL,
                      cross_density_covar = NULL, 
                      cross_reciprocity_covar = NULL,
-                     custom_covars=NULL) {
+                     custom_covars=NULL, 
+                     chains = 4, iter = 2000, warmup = floor(iter/2),
+                     thin = 1, seed = sample.int(.Machine$integer.max, 1)) {
 
     stopifnot(is.character(outcome))
     stopifnot(is.list(network_data))
@@ -56,17 +58,18 @@ MultiP2Fit <- function(network_data,
     rstan::rstan_options(auto_write = TRUE)
     
     fpath <- system.file("stan", "multiplex_p2.stan", package="multiplexP2")
-    print(fpath)
+    p2_fit = NULL
     p2_fit <- rstan::stan(
                     file=fpath, 
                     data = stan_data,
-                    chains = 2,
-                    iter = 100,
-                    warmup = 50,
-                    thin = 1
+                    chains = chains,
+                    iter = iter,
+                    warmup = warmup,
+                    thin = thin,
+                    seed = seed
                     )
     newMultiP2Fit = structure(
-                            list(),
+                            list(stan_fit = p2_fit),
                             network_data=network_data,
                             actor_data=actor_data,
                             outcome=outcome,
@@ -92,3 +95,16 @@ MultiP2Fit <- function(network_data,
 #             reciprocity = c("network_covariate1","network_covariate2"),
 #             cross_density = c("network_covariate1","network_covariate2"), 
 #             cross_reciprocity = NULL)
+
+#' @export
+print.MultiP2Fit <- function(x) {
+    cat(attr(f, "outcome"))
+}
+
+#' @export
+summary.MultiP2Fit <- function(x) {
+    pattern = "^mu|^rho|^cross|fixed"
+    s <- rstan::summary(x$stan_fit)$summary
+    res <- s[grep(pattern,rownames(s)),1:10]
+    print(res)
+}

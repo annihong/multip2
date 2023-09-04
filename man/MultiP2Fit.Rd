@@ -5,23 +5,29 @@
 \title{Format covariates data for stan estimation}
 \usage{
 MultiP2Fit(
-  network_data = list(),
+  network_data,
+  outcome,
   actor_data = data.frame(),
-  outcome = "",
-  sender_covar = "",
-  receiver_covar = "",
-  density_covar = "",
-  recip_covar = "",
-  cross_density_covar = "",
-  cross_recip_covar = ""
+  senders_covar = NULL,
+  receivers_covar = NULL,
+  density_covar = NULL,
+  reciprocity_covar = NULL,
+  cross_density_covar = NULL,
+  cross_reciprocity_covar = NULL,
+  custom_covars = NULL,
+  chains = 4,
+  iter = 2000,
+  warmup = floor(iter/2),
+  thin = 1,
+  seed = sample.int(.Machine$integer.max, 1)
 )
 }
 \arguments{
 \item{network_data}{list of p + t matrices of dim n x n : network outcomes and network covariates, p is the number of network covariates and t is the number of layers in the multiplex network outcome.}
 
-\item{actor_data}{n x p data frame: p covariates of length of the number of actors (n)}
-
 \item{outcome}{vector: names of the layers of networks in the network_data as the outcome multiplex network}
+
+\item{actor_data}{n x p data frame: p covariates of length of the number of actors (n)}
 }
 \value{
 a MultiP2Fit object

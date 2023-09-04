@@ -13,7 +13,7 @@ format_covariates(t, H, n, covariates)
 
 \item{n}{number of actors}
 
-\item{covariates}{list of all the formatted covariates: list(is_within = {T, F}, t_or_h, var_name, value) (still need a function for this)}
+\item{covars}{}
 }
 \value{
 A list of covariates formatted to be estimated via multiplex_p2.stan
