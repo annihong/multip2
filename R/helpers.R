@@ -70,4 +70,11 @@ matrix_to_dyads_1d <- function(M){
   return(y)
 }
 
+get_pair_names <- function(outcome) {
+    t = length(outcome)
+    pairs <- get_dyads(t)
+    lapply(pairs, function(x) paste0(outcome[x[1]],":", outcome[x[2]]))
+}
+
+
 
