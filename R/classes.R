@@ -88,29 +88,51 @@ MultiP2Fit <- function(network_data,
 # names(networks) <-  c("network1", "network2", "network_covariate1",      "network_covariate2")
 # actor_data = data.frame(actor_attr1=1:3, actor_attr2=1:3)
 
+
 # m <- MultiP2Fit(outcome = c("network1", "network2"), 
 # network_data = networks, 
-# actor_data = actor_data, senders_covar=c("actor_attr1", "actor_attr2"), cross_density_covar = c("network_covariate1","network_covariate2"), iter=100)
+# actor_data = actor_data, senders_covar=c("actor_attr1", "actor_attr2"), iter=100,
+#             receivers_covar = c("actor_attr1", "actor_attr2"),
+#             density_covar = c("network_covariate1","network_covariate2"),
+#             reciprocity_covar = c("network_covariate1","network_covariate2"),
+#             cross_density_covar = c("network_covariate1","network_covariate2"))
 
-covars = list(senders = c("actor_attr1", "actor_attr2"),
-            receivers = c("actor_attr1", "actor_attr2"),
-            density = c("network_covariate1","network_covariate2"),
-            reciprocity = c("network_covariate1","network_covariate2"),
-            cross_density = c("network_covariate1","network_covariate2"), 
-            cross_reciprocity = NULL)
+
+#' @export
+summary.MultiP2Fit <- function(x) {
+    s <- x$summary
+    print(s)
+    
+}
+
 
 #' @export
 print.MultiP2Fit <- function(x) {
     cat(attr(x, "outcome"))
 }
 
+#' Extract parameter summary from the fitted stan object
+#' 
+#' @param fit rstan fit object: fitted stan object
+#' @param pattern string: a regex pattern corresponding to the desired parameters, 
+#' default is "^mu|^rho|^cross|fixed", which are all the fixed parameters
+#' @return a matrix of the model output summary of the specified parameters
+#' @export
 extract_model_info <- function(fit, pattern = "^mu|^rho|^cross|fixed") {
   s <- rstan::summary(fit)$summary
   res <- s[grep(pattern,rownames(s)),1:10]
   return(res)
 }
 
+#' Extract and rename the summary of all the fixed parameters
+#' 
+#' @param fit rstan fit object: fitted stan object
+#' @param stan_data list: the "stan_data" attribute of the MultiP2Fit object
+#' @param outcome vector: the "outcome" attribute of the MultiP2Fit object, names of the layers of the multiplex network
+#' @param pairs vector: the "pair_names" attribute of the MultiP2Fit object, names of the pairs of layers of the multiplex network
+#' @return a matrix of the model output summary of the fixed parameters (baseline and covariates effects)
 make_fixed_summary <- function(fit, stan_data, outcome, pairs) {
+
     rename_covar <- function(res, pattern, param_names, get_name_func) {
     network_covar_idx <- grep(pattern, rownames(res))
     network_covar_names <- lapply(param_names, get_name_func)
@@ -119,7 +141,7 @@ make_fixed_summary <- function(fit, stan_data, outcome, pairs) {
     newnames[network_covar_idx] <- unlist(network_covar_names)
     rownames(res) <- newnames
     return(res)
-}
+    }
 
     pattern = "^mu|^rho|^cross|fixed"
     res = extract_model_info(fit=fit, pattern=pattern)
@@ -149,28 +171,30 @@ make_fixed_summary <- function(fit, stan_data, outcome, pairs) {
     return(res)
 }
 
+#' Extract and rename the summary of all the random parameters
+#' 
+#' @param fit rstan fit object: fitted stan object
+#' @param outcome vector: the "outcome" attribute of the MultiP2Fit object, names of the layers of the multiplex network
+#' @return a matrix of the model output summary of the random parameters (the estimated variance-covariance matrix)
 make_random_summary <- function(fit, outcome) {
+    #extract all the entries of the varcov matrix from the p2 fit 
     sigma_raw <- extract_model_info(fit, pattern="Sigma")
+    #names of the actor vars 
     new_names <- c(outer(c("sender:", "receiver:"),outcome, FUN=paste0))
     res <- sigma_raw
     for (name in rownames(sigma_raw)) {
         name_string = strsplit(name, "")[[1]]
         row = name_string[7]
         col = name_string[9]
-        
+        #remove all the repeated entries because the var-covar matrix is symmetrical 
         if (row > col) {
             res = res[-which(rownames(res) == name),]
+        # renaming the lower triangular entries but rename for easier interpretation
         } else {
             new_name <- paste(new_names[as.numeric(row)], new_names[as.numeric(col)], sep = "_")
             rownames(res)[rownames(res) == name] <- new_name
         }
     }
     return(res)
-}
-
-#' @export
-summary.MultiP2Fit <- function(x) {
-    s <- x$summary
-    print(s)
 }
 
