@@ -38,8 +38,8 @@ data {
   
   //adding covariates to multiplex p2
   //TODO: dealing with different number of covariates for different effects
-  int<lower=0> D_within[T, 4]; // X[t, 1:4] # of covariates for mu_t, rho_t, alpha_t, beta_t
-  int<lower=0> D_cross[H, 2]; // X[h, 1:2]# of covar for cross_mu_h, cross_rho_h
+  int<lower=0> D_within[T, 4]; // X[t, 1:4]  of covariates for mu_t, rho_t, alpha_t, beta_t
+  int<lower=0> D_cross[H, 2]; // X[h, 1:2] of covar for cross_mu_h, cross_rho_h
   
   vector[sum(D_within[,1])] mu_covariates[n, n]; // for mu  
   vector[sum(D_within[,2])] rho_covariates[n, n]; // for rho
