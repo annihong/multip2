@@ -25,20 +25,39 @@ MultiP2Fit(
 \arguments{
 \item{network_data}{list of p + t matrices of dim n x n : network outcomes and network covariates, p is the number of network covariates and t is the number of layers in the multiplex network outcome.}
 
-\item{outcome}{vector: names of the layers of networks in the network_data as the outcome multiplex network}
+\item{outcome}{A character vector of the names of the layers of networks in the network_data as the outcome multiplex network}
 
 \item{actor_data}{n x p data frame: p covariates of length of the number of actors (n)}
+
+\item{senders_covar}{A character vector indicating the names of the covariates to include for the senders.}
+
+\item{receivers_covar}{A character vector indicating the names of the covariates to include for the receivers.}
+
+\item{density_covar}{A character vector indicating the names of the covariates to include for the density.}
+
+\item{reciprocity_covar}{A character vector indicating the names of the covariates to include for the reciprocity.}
+
+\item{cross_density_covar}{A character vector indicating the names of the covariates to include for the cross-layer density.}
+
+\item{cross_reciprocity_covar}{A character vector indicating the names of the covariates to include for the cross-layer reciprocity.}
+
+\item{custom_covars}{A list of custom covariates to include in the model.}
+
+\item{chains}{An integer indicating the number of Markov chains to run.}
+
+\item{iter}{An integer indicating the number of iterations per chain.}
+
+\item{warmup}{An integer indicating the number of warmup iterations per chain.}
+
+\item{thin}{An integer indicating the thinning rate for the chains.}
+
+\item{seed}{An integer indicating the random seed for the chains.}
 }
 \value{
 a MultiP2Fit object
+
+A list containing the fitted Stan model and parameter labels.
 }
 \description{
 Format covariates data for stan estimation
-}
-\examples{
-networks = replicate(4, matrix(data=1:9, nrow=3), simplify = FALSE)
-names(networks) <-  c("network1", "network2", "network_covariate1",      "network_covariate2")
-MultiP2Fit(outcome = c("network1", "network2"), 
-network_data = networks, 
-actor_data = data.frame(actor_attr1=1:3, actor_attr2=1:3))
 }

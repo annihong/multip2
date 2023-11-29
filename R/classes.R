@@ -1,19 +1,25 @@
 
 #' Format covariates data for stan estimation
 #' 
-#' @param outcome vector: names of the layers of networks in the network_data as the outcome multiplex network
+#' @param outcome A character vector of the names of the layers of networks in the network_data as the outcome multiplex network
 #' @param network_data list of p + t matrices of dim n x n : network outcomes and network covariates, p is the number of network covariates and t is the number of layers in the multiplex network outcome. 
 #' @param actor_data n x p data frame: p covariates of length of the number of actors (n) 
 #' @return a MultiP2Fit object 
+#' @param senders_covar A character vector indicating the names of the covariates to include for the senders.
+#' @param receivers_covar A character vector indicating the names of the covariates to include for the receivers.
+#' @param density_covar A character vector indicating the names of the covariates to include for the density.
+#' @param reciprocity_covar A character vector indicating the names of the covariates to include for the reciprocity.
+#' @param cross_density_covar A character vector indicating the names of the covariates to include for the cross-layer density.
+#' @param cross_reciprocity_covar A character vector indicating the names of the covariates to include for the cross-layer reciprocity.
+#' @param custom_covars A list of custom covariates to include in the model.
+#' @param chains An integer indicating the number of Markov chains to run.
+#' @param iter An integer indicating the number of iterations per chain.
+#' @param warmup An integer indicating the number of warmup iterations per chain.
+#' @param thin An integer indicating the thinning rate for the chains.
+#' @param seed An integer indicating the random seed for the chains.
+#' @return A list containing the fitted Stan model and parameter labels.
 #' @export
-#'
-#' @examples
-#' networks = replicate(4, matrix(data=1:9, nrow=3), simplify = FALSE)
-#' names(networks) <-  c("network1", "network2", "network_covariate1",      "network_covariate2")
-#' MultiP2Fit(outcome = c("network1", "network2"), 
-#' network_data = networks, 
-#' actor_data = data.frame(actor_attr1=1:3, actor_attr2=1:3))
-#constructor
+
 MultiP2Fit <- function(network_data,
                      outcome,
                      actor_data=data.frame(),
@@ -68,10 +74,14 @@ MultiP2Fit <- function(network_data,
                     thin = thin,
                     seed = seed
                     )
-    pairs=unlist(get_pair_names(outcome))                
-    summary <- list("fixed" = make_fixed_summary(p2_fit, stan_data, outcome, pairs), "random" = make_random_summary(p2_fit, outcome))
+    pairs=unlist(get_pair_names(outcome)) 
+    fixed_summary <- make_fixed_summary(p2_fit, stan_data, outcome, pairs)
+    random_summary <- make_random_summary(p2_fit, outcome)         
+    summary <- list("fixed" = fixed_summary$summary, "random" = random_summary$summary)
+    par_labels <- rbind(fixed_summary$par_labels, random_summary$par_labels)
+    rownames(par_labels) <- NULL
     newMultiP2Fit = structure(
-                            list(stan_fit = p2_fit, summary = summary),
+                            list(stan_fit = p2_fit, summary = summary, par_labels = par_labels),
                             network_data=network_data,
                             actor_data=actor_data,
                             outcome=outcome,
@@ -99,7 +109,7 @@ MultiP2Fit <- function(network_data,
 
 
 #' @export
-summary.MultiP2Fit <- function(x) {
+summary.MultiP2Fit <- function(x, ...) {
     s <- x$summary
     print(s)
     
@@ -107,7 +117,7 @@ summary.MultiP2Fit <- function(x) {
 
 
 #' @export
-print.MultiP2Fit <- function(x) {
+print.MultiP2Fit <- function(x, ...) {
     cat(attr(x, "outcome"))
 }
 
@@ -145,6 +155,7 @@ make_fixed_summary <- function(fit, stan_data, outcome, pairs) {
 
     pattern = "^mu|^rho|^cross|fixed"
     res = extract_model_info(fit=fit, pattern=pattern)
+    old_names <- rownames(res)
 
     res <- rename_covar(res=res, pattern="^mu.*fixed|^rho.*fixed|^cross_mu.*fixed|^cross_rho.*fixed",
         param_names=c("mu_covariates", "rho_covariates", "cross_mu_covariates", "cross_rho_covariates"),
@@ -168,7 +179,10 @@ make_fixed_summary <- function(fit, stan_data, outcome, pairs) {
     row_names[cross_mu_idx] <- paste("cross_density", pairs, sep = "_")
     row_names[cross_rho_idx] <- paste("cross_reciprocity", pairs, sep = "_")
     rownames(res) <- row_names
-    return(res)
+     P <- data.frame(
+          Parameter = old_names,
+          Label = row_names)
+    return(list("summary" = res, "par_labels" = P))
 }
 
 #' Extract and rename the summary of all the random parameters
@@ -179,6 +193,7 @@ make_fixed_summary <- function(fit, stan_data, outcome, pairs) {
 make_random_summary <- function(fit, outcome) {
     #extract all the entries of the varcov matrix from the p2 fit 
     sigma_raw <- extract_model_info(fit, pattern="Sigma")
+    old_names <- rownames(sigma_raw)
     #names of the actor vars 
     new_names <- c(outer(c("sender:", "receiver:"),outcome, FUN=paste0))
     res <- sigma_raw
@@ -189,12 +204,21 @@ make_random_summary <- function(fit, outcome) {
         #remove all the repeated entries because the var-covar matrix is symmetrical 
         if (row > col) {
             res = res[-which(rownames(res) == name),]
-        # renaming the lower triangular entries but rename for easier interpretation
-        } else {
-            new_name <- paste(new_names[as.numeric(row)], new_names[as.numeric(col)], sep = "_")
-            rownames(res)[rownames(res) == name] <- new_name
         }
     }
-    return(res)
+
+    rename_sigma <- function(name) {
+        name_string = strsplit(name, "")[[1]]
+        row = name_string[7]
+        col = name_string[9]
+        new_name <- paste(new_names[as.numeric(row)], new_names[as.numeric(col)], sep = "_")
+        return(new_name)
+    }
+
+    rownames(res) <- sapply(rownames(res), rename_sigma)
+    P <- data.frame(
+    Parameter = old_names,
+    Label = sapply(old_names, rename_sigma))
+    return(list("summary" = res, "par_labels" = P))
 }
 

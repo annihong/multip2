@@ -16,6 +16,8 @@ URL: https://github.com/annihong/multiplexP2
 BugReports: https://github.com/annihong/multiplexP2/issues
 Imports: 
     abind,
+    ggmcmc,
+    ggplot2,
     parallel,
     rstan,
     stats

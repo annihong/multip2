@@ -13,14 +13,12 @@ format_covariates(t, H, n, covariates)
 
 \item{n}{number of actors}
 
-\item{covars}{}
+\item{covariates}{list of covariates in the intermediate form:
+covariate <- list(is_within = {T, F}, t_or_h, var_name, value)}
 }
 \value{
 A list of covariates formatted to be estimated via multiplex_p2.stan
 }
 \description{
 Format covariates data for stan estimation
-}
-\examples{
-format_covariates(2, 1, 30, covariates=list())
 }

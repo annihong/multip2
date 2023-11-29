@@ -1,5 +1,15 @@
+#' Helper method to create covariates for a multiplex p2 model
+#'
+#' This function creates a list of covariates to be used in formate_covariates function. It assumes that all the same covariates are used for each layer of the multiplex network. 
+#'
+#' @param t An integer indicating the number of layers of networks.
+#' @param H An integer indicating the number of pairs of layers in the multiplex network.
+#' @param covars A list containing the names of the covariates to include.
+#' @param outcome A character string indicating the names of the layers of the multiplex network.
+#' @param network_data A list containing the network data.
+#' @param actor_data A list containing the actor data.
+#' @return A list of covariates of the form covariates = list(is_within = {T, F}, t_or_h, var_name, value) to be used in the format_covariates function.
 covariates_helper <- function(t, H, covars, outcome, network_data, actor_data) {
-    #govt_s = list(var_name = "senders", t_or_h = 1, is_within = T, value = types)
     create_covar <- function(var_name, t_or_h, is_within, value) {
         return(list(var_name=var_name, t_or_h=t_or_h, is_within=is_within, value=value))
     }
@@ -55,12 +65,10 @@ covariates_helper <- function(t, H, covars, outcome, network_data, actor_data) {
 #' @param t T: number of layers in the multiplex network
 #' @param H number of pairs of layers
 #' @param n number of actors
-#' @param covars 
+#' @param covariates list of covariates in the intermediate form: 
+#' covariate <- list(is_within = {T, F}, t_or_h, var_name, value)
 #'
 #' @return A list of covariates formatted to be estimated via multiplex_p2.stan 
-#' @examples
-#' format_covariates(2, 1, 30, covariates=list())
-
 format_covariates <- function(t, H, n, covariates) {
     D_within = matrix(rep(0, t*4), ncol=4, dimnames = list(1:t, c("density", "reciprocity", "senders", "receivers"))) # no covariates
     if (H == 0) { #uniplex network
