@@ -77,4 +77,45 @@ get_pair_names <- function(outcome) {
 }
 
 
-
+#' Convert Dyadic Data to List of Adjacency Matrices
+#'
+#' This function takes a dataframe of dyadic data and converts it to a list of adjacency matrices.
+#' Each row of the dataframe is a network in dyad form (1 x N) with B total such networks. N is the number of dyads in the network.
+#' The function returns a list of B lists of t adjacency matrices representing the B multiplex networks.
+#'
+#' @param dyad_df A B x N dataframe where each row is a network in dyad form.
+#' @param n Number of actors per network.
+#' @param t Number of layers in the networks.
+#' @param network_type Type of network to return. Options are "adj" for adjacency matrix (default), "igraph" for igraph object, or "network" for network object.
+#'
+#' @return A list of B lists of t adjacency matrices.
+#' @export
+dyads_to_matrix_list <- function(dyad_df, n, t, network_type = "adj") {
+  B <- nrow(dyad_df)
+  matrices <- list()
+  if (t > 1) {
+    for (i in 1:B) {
+      res <- dyads_to_matrix_nd(dyad_df[i,], t, n)
+      if (network_type == "igraph") {
+        matrices[[i]] <- lapply(res, igraph::graph_from_adjacency_matrix)
+      } else if (network_type == "network") {
+        matrices[[i]] <- lapply(res, network::network, directed=T)
+      } else if(network_type == "adj") {
+        matrices[[i]] <- res      
+      }
+    }
+  } else {
+    #back to the uniplex case
+    for (i in 1:B) {
+      res <- dyads_to_matrix_1d(dyad_df[i,], n)
+      if (network_type == "igraph") {
+        matrices[[i]] <- igraph::graph_from_adjacency_matrix(res)
+      } else if (network_type == "network") {
+        matrices[[i]] <- network::network(res, directed=T)
+      } else if(network_type == "adj") {
+        matrices[[i]] <- res      
+      }
+    }
+  }
+  return(matrices)
+}

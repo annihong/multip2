@@ -22,6 +22,7 @@ functions  {
   }
 
 data {
+  int<lower=0> prior_sim; //boolean for whether to simulate from priors (1) or fit the actual model (0)
   int<lower=0> n; //number of actors
   int<lower=0> N; // number of total dyads
   int<lower=0> T; // number of networks
@@ -37,7 +38,6 @@ data {
 
   
   //adding covariates to multiplex p2
-  //TODO: dealing with different number of covariates for different effects
   int<lower=0> D_within[T, 4]; // X[t, 1:4]  of covariates for mu_t, rho_t, alpha_t, beta_t
   int<lower=0> D_cross[H, 2]; // X[h, 1:2] of covar for cross_mu_h, cross_rho_h
   
@@ -217,9 +217,10 @@ model {
     cross_rho_fixed_coef[i] ~ normal(0,10/cross_rho_covariates_S[i]);
   }
 
-  for (k in 1:N_obs) {
-    int g = obs_idx[k];
-    y_obs[k] ~ categorical_logit(x_beta[g]');
+  if (prior_sim == 0) {
+    for (k in 1:N_obs) {
+      y_obs[k] ~ categorical_logit(x_beta[obs_idx[k]]');
+    }
   }
   
 }

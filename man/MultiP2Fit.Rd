@@ -19,7 +19,9 @@ MultiP2Fit(
   iter = 2000,
   warmup = floor(iter/2),
   thin = 1,
-  seed = sample.int(.Machine$integer.max, 1)
+  seed = sample.int(.Machine$integer.max, 1),
+  stan_file = "multiplex_p2.stan",
+  prior_sim = FALSE
 )
 }
 \arguments{
@@ -52,6 +54,8 @@ MultiP2Fit(
 \item{thin}{An integer indicating the thinning rate for the chains.}
 
 \item{seed}{An integer indicating the random seed for the chains.}
+
+\item{stan_file}{A character string indicating the name of the stan file to use, default is "multiplex_p2.stan".}
 }
 \value{
 a MultiP2Fit object

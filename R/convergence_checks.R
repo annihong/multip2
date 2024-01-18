@@ -10,7 +10,7 @@
 #' @param file A character string indicating the output file name for the plots, default = "ggmcmc-output.pdf"
 #' @return NULL
 #' @export
-convergence_check <- function(multip2fit, params, custom_params="", plot=c("traceplot", "running", "geweke"), plot_all = FALSE, file = "ggmcmc-output.pdf") {
+convergence_check <- function(multip2fit, params, custom_params="", plot=c("traceplot", "running", "geweke", "density"), plot_all = FALSE, file = "ggmcmc-output.pdf") {
     fit <- multip2fit$stan_fit
     par_labels <- multip2fit$par_labels
 

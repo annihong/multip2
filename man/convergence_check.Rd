@@ -8,7 +8,7 @@ convergence_check(
   multip2fit,
   params,
   custom_params = "",
-  plot = c("traceplot", "running", "geweke"),
+  plot = c("traceplot", "running", "geweke", "density"),
   plot_all = FALSE,
   file = "ggmcmc-output.pdf"
 )

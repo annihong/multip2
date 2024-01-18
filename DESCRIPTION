@@ -20,4 +20,6 @@ Imports:
     ggplot2,
     parallel,
     rstan,
-    stats
+    stats,
+    network,
+    igraph

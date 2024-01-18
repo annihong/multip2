@@ -17,6 +17,7 @@
 #' @param warmup An integer indicating the number of warmup iterations per chain.
 #' @param thin An integer indicating the thinning rate for the chains.
 #' @param seed An integer indicating the random seed for the chains.
+#' @param stan_file A character string indicating the name of the stan file to use, default is "multiplex_p2.stan".
 #' @return A list containing the fitted Stan model and parameter labels.
 #' @export
 
@@ -31,7 +32,8 @@ MultiP2Fit <- function(network_data,
                      cross_reciprocity_covar = NULL,
                      custom_covars=NULL, 
                      chains = 4, iter = 2000, warmup = floor(iter/2),
-                     thin = 1, seed = sample.int(.Machine$integer.max, 1)) {
+                     thin = 1, seed = sample.int(.Machine$integer.max, 1),
+                     stan_file = "multiplex_p2.stan", prior_sim = FALSE) {
 
     stopifnot(is.character(outcome))
     stopifnot(is.list(network_data))
@@ -59,11 +61,12 @@ MultiP2Fit <- function(network_data,
     
     stan_covar = format_covariates(t, H, n, covariates)
     stan_data = append(stan_network_data, stan_covar)
+    stan_data$prior_sim = prior_sim
 
     options(mc.cores = parallel::detectCores())
     rstan::rstan_options(auto_write = TRUE)
     
-    fpath <- system.file("stan", "multiplex_p2.stan", package="multiplexP2")
+    fpath <- system.file("stan", stan_file, package="multiplexP2")
     p2_fit = NULL
     p2_fit <- rstan::stan(
                     file=fpath, 
@@ -93,19 +96,6 @@ MultiP2Fit <- function(network_data,
 
     return(newMultiP2Fit)
 }
-
-# networks = replicate(4, matrix(data=1:9, nrow=3), simplify = FALSE)
-# names(networks) <-  c("network1", "network2", "network_covariate1",      "network_covariate2")
-# actor_data = data.frame(actor_attr1=1:3, actor_attr2=1:3)
-
-
-# m <- MultiP2Fit(outcome = c("network1", "network2"), 
-# network_data = networks, 
-# actor_data = actor_data, senders_covar=c("actor_attr1", "actor_attr2"), iter=100,
-#             receivers_covar = c("actor_attr1", "actor_attr2"),
-#             density_covar = c("network_covariate1","network_covariate2"),
-#             reciprocity_covar = c("network_covariate1","network_covariate2"),
-#             cross_density_covar = c("network_covariate1","network_covariate2"))
 
 
 #' @export
@@ -222,3 +212,26 @@ make_random_summary <- function(fit, outcome) {
     return(list("summary" = res, "par_labels" = P))
 }
 
+#' Extract draws from the (prior) posterior of a fitted stan object
+#' 
+#' @param fit rstan fit object: fitted stan object
+#' @param parameter string: name of the desired parameters, y_tilde is the simulated outcome of the model
+#' @return the (prior) posterior draws of the specified parameters
+extract_draws <- function(fit, parameter) {
+  s <- rstan::extract(fit)
+  res <- s[[parameter]]
+  return(res)
+}
+
+#' Extract simulated network outcome from the (prior) posterior of a fitted stan object
+#' 
+#' @param fit rstan fit object: fitted stan object
+#' @param sim_num integer: number of simulations to extract, counting from the tail of the posterior draws
+#' @param as_adjacency logical: whether to return the simulated network outcome as an adjacency matrix, default is TRUE
+#' @return the (prior) posterior draws of the simulated network outcome
+#' @export
+extract_network_draws <- function(fit, sim_num, as_adjacency = TRUE) {
+    network_draws <- extract_draws(fit, "y_tilde")
+    res <- tail.matrix(network_draws, sim_num)
+    return(res)
+}
