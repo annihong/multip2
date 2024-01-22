@@ -4,14 +4,14 @@
 \alias{extract_network_draws}
 \title{Extract simulated network outcome from the (prior) posterior of a fitted stan object}
 \usage{
-extract_network_draws(fit, sim_num, as_adjacency = TRUE)
+extract_network_draws(fit, sim_num, n, t, network_type = "adj")
 }
 \arguments{
 \item{fit}{rstan fit object: fitted stan object}
 
 \item{sim_num}{integer: number of simulations to extract, counting from the tail of the posterior draws}
 
-\item{as_adjacency}{logical: whether to return the simulated network outcome as an adjacency matrix, default is TRUE}
+\item{network_type}{Type of network to return. Options are "adj" for adjacency matrix (default), "igraph" for igraph object, or "network" for network object, "dyad" for dyad form.}
 }
 \value{
 the (prior) posterior draws of the simulated network outcome
