@@ -228,7 +228,7 @@ extract_draws <- function(fit, parameter) {
 #' @param fit rstan fit object: fitted stan object
 #' @param sim_num integer: number of simulations to extract, counting from the tail of the posterior draws
 #' @param network_type Type of network to return. Options are "adj" for adjacency matrix (default), "igraph" for igraph object, or "network" for network object, "dyad" for dyad form.
-#' @return the (prior) posterior draws of the simulated network outcome
+#' @return A list of length `sim_num`. Each element of the list is another list of `t` networks. These networks represent the (prior) posterior draws of the simulated network outcome, in the specified format.
 #' @export
 extract_network_draws <- function(fit, sim_num, n, t, network_type = "adj") {
     network_draws <- extract_draws(fit, "y_tilde")
