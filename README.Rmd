@@ -35,9 +35,11 @@ This is a basic example which shows you how to solve a common problem:
 
 ```{r example}
 library(multiplexP2)
-networks = replicate(4, matrix(data=1:9, nrow=3), simplify = FALSE)
+#networks = replicate(4, matrix(data=sample(c(0,1), 9, replace=TRUE), nrow=3), simplify = FALSE)
+n = 5
+networks = replicate(4, matrix(data=sample(c(0,1), n^2, replace=TRUE, prob=c(0.7,0.3)), nrow=n), simplify = FALSE) #self loops are ignored
 names(networks) <-  c("network1", "network2", "network_covariate1",      "network_covariate2")
-actor_data = data.frame(actor_attr1=1:3, actor_attr2=1:3)
+actor_data = data.frame(actor_attr1=1:n, actor_attr2=1:n)
 
 
 m <- MultiP2Fit(outcome = c("network1", "network2"), 
@@ -50,6 +52,17 @@ receivers_covar = c("actor_attr1", "actor_attr2"),
 density_covar = c("network_covariate1","network_covariate2"),
 reciprocity_covar = c("network_covariate1","network_covariate2"),
 cross_density_covar = c("network_covariate1","network_covariate2"))
+
+#uniplex
+m <- MultiP2Fit(outcome = c("network1"), 
+network_data = networks, 
+actor_data = actor_data, 
+senders_covar=c("actor_attr1", "actor_attr2"),
+iter=100,
+stan_file = "multiplex_p2.stan",
+receivers_covar = c("actor_attr1", "actor_attr2"),
+density_covar = c("network_covariate1","network_covariate2"),
+reciprocity_covar = c("network_covariate1","network_covariate2"))
 ```
 
 What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:

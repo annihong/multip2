@@ -36,7 +36,11 @@ matrix_to_dyads_nd <- function(Ms) {
   }
   t = length(Ms)
   y_1d <- do.call(cbind, lapply(Ms, matrix_to_dyads_1d))
-  y = apply(y_1d, 1, helper)
+  if (t < 2) {
+    y <- as.vector(y_1d) #uniplex case
+  } else {
+    y = apply(y_1d, 1, helper)
+  }
   return(y)
 }
 
