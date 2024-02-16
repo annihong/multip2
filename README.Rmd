@@ -33,7 +33,7 @@ devtools::install_github("annihong/multiplexP2")
 
 This is a basic example which shows you how to solve a common problem:
 
-```{r example}
+```{r example, eval=FALSE}
 library(multiplexP2)
 #networks = replicate(4, matrix(data=sample(c(0,1), 9, replace=TRUE), nrow=3), simplify = FALSE)
 n = 5
