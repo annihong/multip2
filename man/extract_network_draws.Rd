@@ -14,7 +14,7 @@ extract_network_draws(fit, sim_num, n, t, network_type = "adj")
 \item{network_type}{Type of network to return. Options are "adj" for adjacency matrix (default), "igraph" for igraph object, or "network" for network object, "dyad" for dyad form.}
 }
 \value{
-the (prior) posterior draws of the simulated network outcome
+A list of length \code{sim_num}. Each element of the list is another list of \code{t} networks. These networks represent the (prior) posterior draws of the simulated network outcome, in the specified format.
 }
 \description{
 Extract simulated network outcome from the (prior) posterior of a fitted stan object
