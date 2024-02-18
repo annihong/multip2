@@ -46,12 +46,13 @@ m <- MultiP2Fit(outcome = c("network1", "network2"),
 network_data = networks, 
 actor_data = actor_data, 
 senders_covar=c("actor_attr1", "actor_attr2"),
-iter=100,
-stan_file = "multiplex_p2.stan",
+iter=100,chains=2,thin=10,
+#stan_file = "multiplex_p2.stan",
+stan_file = "multiplex_p2_low_mem.stan",
 receivers_covar = c("actor_attr1", "actor_attr2"),
 density_covar = c("network_covariate1","network_covariate2"),
 reciprocity_covar = c("network_covariate1","network_covariate2"),
-cross_density_covar = c("network_covariate1","network_covariate2"))
+cross_density_covar = c("network_covariate1","network_covariate2"), )
 
 #uniplex
 m <- MultiP2Fit(outcome = c("network1"), 

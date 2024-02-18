@@ -83,7 +83,13 @@ parameters {
 }
 
 transformed parameters{
+  
+}
+
+model {
   matrix[N,K] x_beta;
+  // start of the x_beta calculation
+  
   {
     
     matrix[n,2*T] C; // for each actor, there are 2 * T number of random actor effects (two per network)
@@ -176,10 +182,8 @@ transformed parameters{
     }
   }
 
-}
+  // end of the x_beta calculation
 
-model {
-  
   mu ~ normal(0,10); //mu and rho are vectors but normal function is vectorized
   rho  ~ normal(0,10);
   cross_mu ~ normal(0,10);
@@ -192,7 +196,7 @@ model {
   // for (i in 1:n) {
   //   C[i] ~ multi_normal(rep_vector(0,2*T),quad_form_diag(corr_R, sigma));
   // }
-  
+
   for (i in 1:sum(D_within[,1])) {
     mu_fixed_coef[i] ~ normal(0,10/mu_covariates_S[i]);
   }
