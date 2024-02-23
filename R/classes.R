@@ -33,7 +33,7 @@ MultiP2Fit <- function(network_data,
                      custom_covars=NULL, 
                      chains = 4, iter = 2000, warmup = floor(iter/2),
                      thin = 1, seed = sample.int(.Machine$integer.max, 1),
-                     stan_file = "multiplex_p2.stan", prior_sim = FALSE) {
+                     stan_file = "multiplex_p2_low_mem.stan", prior_sim = FALSE) {
 
     stopifnot(is.character(outcome))
     stopifnot(is.list(network_data))
