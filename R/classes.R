@@ -20,6 +20,8 @@
 #' @param stan_file A character string indicating the name of the stan file to use, default is "multiplex_p2.stan".
 #' @return A list containing the fitted Stan model and parameter labels.
 #' @export
+# t = 3
+# priors <- list(mu_sd = rep(0, t), mu_mu = rep(0, t), rho_sd = rep(0, t), rho_sd = rep(0, t), cross_mu_sd = rep(0, t), cross_mu_mu = rep(0, t), cross_rho_sd = rep(0, t),  cross_rho_mu = rep(0, t), )
 
 MultiP2Fit <- function(network_data,
                      outcome,
@@ -30,10 +32,7 @@ MultiP2Fit <- function(network_data,
                      reciprocity_covar = NULL,
                      cross_density_covar = NULL, 
                      cross_reciprocity_covar = NULL,
-                     custom_covars=NULL, 
-                     chains = 4, iter = 2000, warmup = floor(iter/2),
-                     thin = 1, seed = sample.int(.Machine$integer.max, 1),
-                     stan_file = "multiplex_p2_low_mem.stan", prior_sim = FALSE) {
+                     custom_covars=NULL,custom_priors=NULL...) {
 
     stopifnot(is.character(outcome))
     stopifnot(is.list(network_data))
@@ -45,29 +44,60 @@ MultiP2Fit <- function(network_data,
                 reciprocity = reciprocity_covar,
                 cross_density = cross_density_covar, 
                 cross_reciprocity = cross_reciprocity_covar)
-    
-
-    M = network_data[outcome]
-    stan_network_data = format_network(M)
-    t = stan_network_data$T
-    H = stan_network_data$H
-    n = stan_network_data$n
 
     if (is.null(custom_covars)) {
-        covariates = covariates_helper(t, H, covars, outcome, network_data, actor_data)
+        covariates = covars
     } else {
         covariates = custom_covars
     }
     
-    stan_covar = format_covariates(t, H, n, covariates)
-    stan_data = append(stan_network_data, stan_covar)
+
+    stan_data = stan_data(network_data, actor_data, outcome, covars, custom_covars, custom_priors)
+    newMultiP2Fit = structure(
+                            list(stan_fit = NULL, summary = NULL, par_labels = NULL),
+                            network_data=network_data,
+                            actor_data=actor_data,
+                            outcome=outcome,
+                            pair_names=pairs,
+                            covariates=covariates,
+                            stan_data = stan_data,
+                            class = "MultiP2Fit"
+                            )
+
+    return(newMultiP2Fit)
+}
+
+
+#' fit function
+#' 
+#' This function performs the estimation of the multiplex P2 model using Stan.
+#' 
+#' @param model_obj An object of class "MultiP2Fit"
+#' @return An object of class "MultiP2Fit" with the fitted Stan model and parameter labels
+#' @export
+fit <- function(model_obj, ...) {
+  UseMethod("fit")
+}
+
+#' fit function for "MultiP2Fit" class
+#'
+#' @param model_obj An object of class "MultiP2Fit"
+#' @param ... Other arguments passed to or from other methods
+#'
+#' @export fit.MultiP2Fit
+#' @export
+fit.MultiP2Fit <- function(model_obj, chains = 4, iter = 200, warmup = floor(iter/2),
+                     thin = 1, seed = sample.int(.Machine$integer.max, 1),
+                     stan_file = "multiplex_p2_low_mem.stan", prior_sim = FALSE,...) {
+    stan_data = attr(model_obj, "stan_data")
     stan_data$prior_sim = prior_sim
+    outcome = attr(model_obj, "outcome")
+    
 
     options(mc.cores = parallel::detectCores())
     rstan::rstan_options(auto_write = TRUE)
     
     fpath <- system.file("stan", stan_file, package="multiplexP2")
-    p2_fit = NULL
     p2_fit <- rstan::stan(
                     file=fpath, 
                     data = stan_data,
@@ -83,32 +113,25 @@ MultiP2Fit <- function(network_data,
     summary <- list("fixed" = fixed_summary$summary, "random" = random_summary$summary)
     par_labels <- rbind(fixed_summary$par_labels, random_summary$par_labels)
     rownames(par_labels) <- NULL
-    newMultiP2Fit = structure(
-                            list(stan_fit = p2_fit, summary = summary, par_labels = par_labels),
-                            network_data=network_data,
-                            actor_data=actor_data,
-                            outcome=outcome,
-                            pair_names=pairs,
-                            covariates=covariates,
-                            stan_data = stan_data,
-                            class = "MultiP2Fit"
-                            )
 
-    return(newMultiP2Fit)
+    model_obj$stan_fit <- p2_fit
+    model_obj$summary <- summary
+    model_obj$par_labels <- par_labels
+    return(model_obj)
 }
 
 
 #' @export
-summary.MultiP2Fit <- function(x, ...) {
-    s <- x$summary
+summary.MultiP2Fit <- function(model_obj, ...) {
+    s <- model_obj$summary
     print(s)
     
 }
 
 
 #' @export
-print.MultiP2Fit <- function(x, ...) {
-    cat(attr(x, "outcome"))
+print.MultiP2Fit <- function(model_obj, ...) {
+    cat(attr(model_obj, "outcome"))
 }
 
 #' Extract parameter summary from the fitted stan object

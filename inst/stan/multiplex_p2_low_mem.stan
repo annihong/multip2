@@ -46,8 +46,8 @@ data {
   matrix[n,sum(D_within[,3])] alpha_covariates; // for alpha
   matrix[n,sum(D_within[,4])] beta_covariates; // for beta
   
-  vector[H != 0 ? sum(D_cross[,1]) : 0] cross_mu_covariates[n, n]; // for cross_mu  
-  vector[H != 0 ? sum(D_cross[,2]) : 0] cross_rho_covariates[n, n]; // for cross_rho
+  vector[H != 0 ? sum(D_cross[,1]) : 0] cross_mu_covariates[n, n];
+  vector[H != 0 ? sum(D_cross[,2]) : 0] cross_rho_covariates[n, n];
 
 
   vector[sum(D_within[,1])] mu_covariates_S;

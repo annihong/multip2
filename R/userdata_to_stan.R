@@ -158,10 +158,22 @@ format_network <- function(M) {
 #' @param covariates intermediate form of the covariates: covariate <- list(is_within = {T, F}, t_or_h, var_name, value)
 #' @return a list in the format for Stan code
 
-stan_data <- function(M, covariates) {
-    network_data <- format_network(M)
-    covariates_data <- format_covariates(covariates)
-    stan_data <- append(network_data, covariates_data)
+stan_data <- function(network_data, actor_data, outcome, covars, custom_covars, prior_sim) {
+    M = network_data[outcome]
+    stan_network_data = format_network(M)
+    t = stan_network_data$T
+    H = stan_network_data$H
+    n = stan_network_data$n
+
+    if (is.null(custom_covars)) {
+        covariates = covariates_helper(t, H, covars, outcome, network_data, actor_data)
+    } else {
+        covariates = custom_covars
+    }
+    
+    stan_covar = format_covariates(t, H, n, covariates)
+    stan_data = append(stan_network_data, stan_covar)
+    #stan_data$prior_sim = prior_sim
     return(stan_data)
 }
 

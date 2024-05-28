@@ -4,7 +4,7 @@
 \alias{stan_data}
 \title{The main function to convert user network input to Stan data}
 \usage{
-stan_data(M, covariates)
+stan_data(network_data, actor_data, outcome, covars, custom_covars, prior_sim)
 }
 \arguments{
 \item{M}{list of the observed networks in adjacency matrix form}

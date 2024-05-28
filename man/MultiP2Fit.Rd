@@ -15,13 +15,7 @@ MultiP2Fit(
   cross_density_covar = NULL,
   cross_reciprocity_covar = NULL,
   custom_covars = NULL,
-  chains = 4,
-  iter = 2000,
-  warmup = floor(iter/2),
-  thin = 1,
-  seed = sample.int(.Machine$integer.max, 1),
-  stan_file = "multiplex_p2.stan",
-  prior_sim = FALSE
+  custom_priors = NULL...
 )
 }
 \arguments{
