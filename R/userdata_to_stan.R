@@ -158,7 +158,7 @@ format_network <- function(M) {
 #' @param covariates intermediate form of the covariates: covariate <- list(is_within = {T, F}, t_or_h, var_name, value)
 #' @return a list in the format for Stan code
 
-stan_data <- function(network_data, actor_data, outcome, covars, custom_covars, prior_sim) {
+stan_data <- function(network_data, actor_data, outcome, covars, custom_covars, custom_priors) {
     M = network_data[outcome]
     stan_network_data = format_network(M)
     t = stan_network_data$T
@@ -170,12 +170,46 @@ stan_data <- function(network_data, actor_data, outcome, covars, custom_covars, 
     } else {
         covariates = custom_covars
     }
-    
+
     stan_covar = format_covariates(t, H, n, covariates)
     stan_data = append(stan_network_data, stan_covar)
-    #stan_data$prior_sim = prior_sim
     return(stan_data)
 }
 
+default_priors <- function(stan_data) {
+    t = stan_data$T
+    H = stan_data$H
+    n = stan_data$n
+
+    priors = list(
+            mu_mean_prior = rep(0, t), 
+            mu_sd_prior = rep(10, t), 
+            rho_mean_prior = rep(0, t),
+            rho_sd_prior = rep(10, t),
+            cross_mu_mean_prior = rep(0, H),
+            cross_mu_sd_prior = rep(10, H),
+            cross_rho_mean_prior = rep(0, H),
+            cross_rho_sd_prior = rep(10, H),
+            mu_covariates_mean_prior = rep(0, length(stan_data$mu_covariates_S)),
+            mu_covariates_sd_prior = 10/stan_data$mu_covariates_S,
+            rho_covariates_mean_prior = rep(0, length(stan_data$rho_covariates_S)),
+            rho_covariates_sd_prior = 10/stan_data$rho_covariates_S,
+            cross_mu_covariates_mean_prior = rep(0, length(stan_data$cross_mu_covariates_S)),
+            cross_mu_covariates_sd_prior = 10/stan_data$cross_mu_covariates_S,
+            cross_rho_covariates_mean_prior = rep(0, length(stan_data$cross_rho_covariates_S)),
+            cross_rho_covariates_sd_prior = 10/stan_data$cross_rho_covariates_S,
+            alpha_covariates_mean_prior = rep(0, length(stan_data$alpha_covariates_S)),
+            alpha_covariates_sd_prior = 10/stan_data$alpha_covariates_S,
+            beta_covariates_mean_prior = rep(0, length(stan_data$beta_covariates_S)),
+            beta_covariates_sd_prior = 10/stan_data$beta_covariates_S
+        )
+
+        priors <- lapply(priors, array)
+        priors$scale_alpha_prior = 3
+        priors$scale_beta_prior = 50
+        priors$LJK_eta_prior = 2
+        
+    return(priors)
+}
 
 

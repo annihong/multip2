@@ -32,6 +32,7 @@ data {
   int<lower=0> N_obs;
   int<lower=1, upper=N> obs_idx[N_obs];
 
+
     //outcomes
   int<lower=0> K; //number of outcomes on a dyad := 2^2T
   int<lower=1, upper=K> y_obs[N_obs]; //y[N] \in {1,...,2^{2T}}^N, actual observed outcomes
@@ -50,14 +51,40 @@ data {
   vector[H != 0 ? sum(D_cross[,2]) : 0] cross_rho_covariates[n, n];
 
 
-  vector[sum(D_within[,1])] mu_covariates_S;
-  vector[sum(D_within[,2])] rho_covariates_S;
-  vector[sum(D_within[,3])] alpha_covariates_S;
-  vector[sum(D_within[,4])] beta_covariates_S;
+  // priors
+  vector[T] mu_mean_prior;
+  vector[T] mu_sd_prior;
+  vector[T] rho_mean_prior;
+  vector[T] rho_sd_prior;
 
-  vector[H != 0 ? sum(D_cross[,1]) : 0] cross_mu_covariates_S;
-  vector[H != 0 ? sum(D_cross[,2]) : 0] cross_rho_covariates_S;
+  vector[H] cross_mu_mean_prior;
+  vector[H] cross_mu_sd_prior;
+  vector[H] cross_rho_mean_prior;
+  vector[H] cross_rho_sd_prior;
 
+  real scale_alpha_prior;
+  real scale_beta_prior;
+  real LJK_eta_prior;
+
+  // priors for the covariates
+
+  vector[sum(D_within[,1])] mu_covariates_sd_prior;
+  vector[sum(D_within[,1])] mu_covariates_mean_prior;
+
+  vector[sum(D_within[,2])] rho_covariates_sd_prior;
+  vector[sum(D_within[,2])] rho_covariates_mean_prior;
+
+  vector[sum(D_within[,3])] alpha_covariates_sd_prior;
+  vector[sum(D_within[,3])] alpha_covariates_mean_prior;
+
+  vector[sum(D_within[,4])] beta_covariates_sd_prior;
+  vector[sum(D_within[,4])] beta_covariates_mean_prior;
+
+  vector[H != 0 ? sum(D_cross[,1]) : 0] cross_mu_covariates_sd_prior;
+  vector[H != 0 ? sum(D_cross[,1]) : 0] cross_mu_covariates_mean_prior;
+
+  vector[H != 0 ? sum(D_cross[,2]) : 0] cross_rho_covariates_sd_prior;
+  vector[H != 0 ? sum(D_cross[,2]) : 0] cross_rho_covariates_mean_prior;
 }
 
 parameters {
@@ -184,13 +211,27 @@ model {
 
   // end of the x_beta calculation
 
-  mu ~ normal(0,10); //mu and rho are vectors but normal function is vectorized
-  rho  ~ normal(0,10);
-  cross_mu ~ normal(0,10);
-  cross_rho ~ normal(0,10);
+
+  for (i in 1:T) {
+    mu[i] ~ normal(mu_mean_prior[i],mu_sd_prior[i]);
+    rho[i] ~ normal(rho_mean_prior[i],rho_sd_prior[i]);
+  }
+
+  for (i in 1:H) {
+    cross_mu[i] ~ normal(cross_mu_mean_prior[i],cross_mu_sd_prior[i]);
+    cross_rho[i] ~ normal(cross_rho_mean_prior[i],cross_rho_sd_prior[i]);
+  }
   to_vector(z) ~ std_normal();
-  L_corr ~ lkj_corr_cholesky(2);
-  sigma ~ inv_gamma(3,50);
+  L_corr ~ lkj_corr_cholesky(LJK_eta_prior);
+  sigma ~ inv_gamma(scale_alpha_prior,scale_beta_prior);
+
+  // mu ~ normal(0,10); //mu and rho are vectors but normal function is vectorized
+  // rho  ~ normal(0,10);
+  // cross_mu ~ normal(0,10);
+  // cross_rho ~ normal(0,10);
+
+  // L_corr ~ lkj_corr_cholesky(2);
+  // sigma ~ inv_gamma(3,50);
   //Sigma ~ inv_wishart(2 * T + 1,diag_matrix(rep_vector(1,2*T)));
   
   // for (i in 1:n) {
@@ -198,27 +239,27 @@ model {
   // }
 
   for (i in 1:sum(D_within[,1])) {
-    mu_fixed_coef[i] ~ normal(0,10/mu_covariates_S[i]);
+    mu_fixed_coef[i] ~ normal(mu_covariates_mean_prior[i],mu_covariates_sd_prior[i]);
   }
   
   for (i in 1:sum(D_within[,2])) {
-    rho_fixed_coef[i] ~ normal(0,10/rho_covariates_S[i]);
+    rho_fixed_coef[i] ~ normal(rho_covariates_mean_prior[i],rho_covariates_sd_prior[i]);
   }
   
   for (i in 1:sum(D_within[,3])) {
-    alpha_fixed_coef[i] ~ normal(0,10/alpha_covariates_S[i]);
+    alpha_fixed_coef[i] ~ normal(alpha_covariates_mean_prior[i],alpha_covariates_sd_prior[i]);
   }
   
   for (i in 1:sum(D_within[,4])) {
-    beta_fixed_coef[i] ~ normal(0,10/beta_covariates_S[i]);
+    beta_fixed_coef[i] ~ normal(beta_covariates_mean_prior[i],beta_covariates_sd_prior[i]);
   }
 
   for (i in 1:sum(D_cross[,1])) {
-    cross_mu_fixed_coef[i] ~ normal(0,10/cross_mu_covariates_S[i]);
+    cross_mu_fixed_coef[i] ~ normal(cross_mu_covariates_mean_prior[i],cross_mu_covariates_sd_prior[i]);
   }
   
   for (i in 1:sum(D_cross[,2])) {
-    cross_rho_fixed_coef[i] ~ normal(0,10/cross_rho_covariates_S[i]);
+    cross_rho_fixed_coef[i] ~ normal(cross_rho_covariates_mean_prior[i],cross_rho_covariates_sd_prior[i]);
   }
 
   if (prior_sim == 0) {

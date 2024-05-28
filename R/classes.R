@@ -32,7 +32,7 @@ MultiP2Fit <- function(network_data,
                      reciprocity_covar = NULL,
                      cross_density_covar = NULL, 
                      cross_reciprocity_covar = NULL,
-                     custom_covars=NULL,custom_priors=NULL...) {
+                     custom_covars=NULL,custom_priors=NULL,...) {
 
     stopifnot(is.character(outcome))
     stopifnot(is.list(network_data))
@@ -51,8 +51,16 @@ MultiP2Fit <- function(network_data,
         covariates = custom_covars
     }
     
+    stan_data = stan_data(network_data, actor_data, outcome, covars, custom_covars)
 
-    stan_data = stan_data(network_data, actor_data, outcome, covars, custom_covars, custom_priors)
+    if (is.null(custom_priors)) {
+        priors <- default_priors(stan_data)
+    } else {
+        priors <- custom_priors
+    }
+
+    stan_data = append(stan_data, priors)
+
     newMultiP2Fit = structure(
                             list(stan_fit = NULL, summary = NULL, par_labels = NULL),
                             network_data=network_data,
@@ -61,6 +69,7 @@ MultiP2Fit <- function(network_data,
                             pair_names=pairs,
                             covariates=covariates,
                             stan_data = stan_data,
+                            priors = priors,
                             class = "MultiP2Fit"
                             )
 

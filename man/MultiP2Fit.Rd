@@ -15,7 +15,8 @@ MultiP2Fit(
   cross_density_covar = NULL,
   cross_reciprocity_covar = NULL,
   custom_covars = NULL,
-  custom_priors = NULL...
+  custom_priors = NULL,
+  ...
 )
 }
 \arguments{
