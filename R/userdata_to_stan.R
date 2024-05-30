@@ -176,39 +176,47 @@ stan_data <- function(network_data, actor_data, outcome, covars, custom_covars, 
     return(stan_data)
 }
 
-default_priors <- function(stan_data) {
+default_priors <- function(stan_data, outcome, covars) {
+
     t = stan_data$T
     H = stan_data$H
     n = stan_data$n
+    pairs=unlist(get_pair_names(outcome)) 
 
-    priors = list(
-            mu_mean_prior = rep(0, t), 
-            mu_sd_prior = rep(10, t), 
-            rho_mean_prior = rep(0, t),
-            rho_sd_prior = rep(10, t),
-            cross_mu_mean_prior = rep(0, H),
-            cross_mu_sd_prior = rep(10, H),
-            cross_rho_mean_prior = rep(0, H),
-            cross_rho_sd_prior = rep(10, H),
-            mu_covariates_mean_prior = rep(0, length(stan_data$mu_covariates_S)),
+    priors <- list(
+            mu_mean_prior = array(0, t), 
+            mu_sd_prior = array(10, t), 
+            rho_mean_prior = array(0, t),
+            rho_sd_prior = array(10, t),
+            cross_mu_mean_prior = array(0, H),
+            cross_mu_sd_prior = array(10, H),
+            cross_rho_mean_prior = array(0, H),
+            cross_rho_sd_prior = array(10, H),
+            mu_covariates_mean_prior = array(0, length(stan_data$mu_covariates_S)),
             mu_covariates_sd_prior = 10/stan_data$mu_covariates_S,
             rho_covariates_mean_prior = rep(0, length(stan_data$rho_covariates_S)),
             rho_covariates_sd_prior = 10/stan_data$rho_covariates_S,
-            cross_mu_covariates_mean_prior = rep(0, length(stan_data$cross_mu_covariates_S)),
+            cross_mu_covariates_mean_prior = array(0, length(stan_data$cross_mu_covariates_S)),
             cross_mu_covariates_sd_prior = 10/stan_data$cross_mu_covariates_S,
-            cross_rho_covariates_mean_prior = rep(0, length(stan_data$cross_rho_covariates_S)),
+            cross_rho_covariates_mean_prior = array(0, length(stan_data$cross_rho_covariates_S)),
             cross_rho_covariates_sd_prior = 10/stan_data$cross_rho_covariates_S,
-            alpha_covariates_mean_prior = rep(0, length(stan_data$alpha_covariates_S)),
+            alpha_covariates_mean_prior = array(0, length(stan_data$alpha_covariates_S)),
             alpha_covariates_sd_prior = 10/stan_data$alpha_covariates_S,
-            beta_covariates_mean_prior = rep(0, length(stan_data$beta_covariates_S)),
-            beta_covariates_sd_prior = 10/stan_data$beta_covariates_S
+            beta_covariates_mean_prior = array(0, length(stan_data$beta_covariates_S)),
+            beta_covariates_sd_prior = 10/stan_data$beta_covariates_S,
+            scale_alpha_prior = 3,
+            scale_beta_prior = 50,
+            LJK_eta_prior = 2
         )
-
-        priors <- lapply(priors, array)
-        priors$scale_alpha_prior = 3
-        priors$scale_beta_prior = 50
-        priors$LJK_eta_prior = 2
         
+    priors[c("mu_mean_prior", "mu_sd_prior", "rho_mean_prior", "rho_sd_prior")] <- lapply(priors[c("mu_mean_prior", "mu_sd_prior", "rho_mean_prior", "rho_sd_prior")], function(x) setNames(x, outcome))
+    priors[c("cross_mu_mean_prior", "cross_mu_sd_prior", "cross_rho_mean_prior", "cross_rho_sd_prior")] <- lapply(priors[c("cross_mu_mean_prior", "cross_mu_sd_prior", "cross_rho_mean_prior", "cross_rho_sd_prior")], function(x) setNames(x, pairs))
+    priors[c("mu_covariates_mean_prior", "mu_covariates_sd_prior")] <- lapply(priors[c("mu_covariates_mean_prior", "mu_covariates_sd_prior")], function(x) setNames(x, dimnames(stan_data[["mu_covariates"]])[[3]]))
+    priors[c("rho_covariates_mean_prior", "rho_covariates_sd_prior")] <- lapply(priors[c("rho_covariates_mean_prior", "rho_covariates_sd_prior")], function(x) setNames(x, dimnames(stan_data[["rho_covariates"]])[[3]]))
+    priors[c("cross_mu_covariates_mean_prior", "cross_mu_covariates_sd_prior")] <- lapply(priors[c("cross_mu_covariates_mean_prior", "cross_mu_covariates_sd_prior")], function(x) setNames(x, dimnames(stan_data[["cross_mu_covariates"]])[[3]]))
+    priors[c("cross_rho_covariates_mean_prior", "cross_rho_covariates_sd_prior")] <- lapply(priors[c("cross_rho_covariates_mean_prior", "cross_rho_covariates_sd_prior")], function(x) setNames(x, dimnames(stan_data[["cross_rho_covariates"]])[[3]]))
+    priors[c("alpha_covariates_mean_prior", "alpha_covariates_sd_prior")] <- lapply(priors[c("alpha_covariates_mean_prior", "alpha_covariates_sd_prior")], function(x) setNames(x, dimnames(stan_data[["alpha_covariates"]])[[2]]))
+    priors[c("beta_covariates_mean_prior", "beta_covariates_sd_prior")] <- lapply(priors[c("beta_covariates_mean_prior", "beta_covariates_sd_prior")], function(x) setNames(x, dimnames(stan_data[["beta_covariates"]])[[2]]))
     return(priors)
 }
 

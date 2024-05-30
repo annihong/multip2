@@ -1,4 +1,10 @@
 
+MultiP2Data <- function(network_data, network_names, actor_data=data.frame()) {
+    network_data <- setNames(network_data, network_names)
+    return(list(network_data = network_data, actor_data = actor_data, network_names = network_names))
+}
+
+
 #' Format covariates data for stan estimation
 #' 
 #' @param outcome A character vector of the names of the layers of networks in the network_data as the outcome multiplex network
@@ -23,53 +29,45 @@
 # t = 3
 # priors <- list(mu_sd = rep(0, t), mu_mu = rep(0, t), rho_sd = rep(0, t), rho_sd = rep(0, t), cross_mu_sd = rep(0, t), cross_mu_mu = rep(0, t), cross_rho_sd = rep(0, t),  cross_rho_mu = rep(0, t), )
 
-MultiP2Fit <- function(network_data,
-                     outcome,
-                     actor_data=data.frame(),
-                     senders_covar = NULL,
-                     receivers_covar = NULL,
-                     density_covar = NULL,
-                     reciprocity_covar = NULL,
-                     cross_density_covar = NULL, 
-                     cross_reciprocity_covar = NULL,
-                     custom_covars=NULL,custom_priors=NULL,...) {
+#create a default empty model. 
+Mp2_model <- function(data_p2,outcome,...) {
+    covariates = list()
 
-    stopifnot(is.character(outcome))
-    stopifnot(is.list(network_data))
-    stopifnot(is.data.frame(actor_data))
+    # stopifnot(is.character(outcome))
+    # stopifnot(is.list(network_data))
+    # stopifnot(is.data.frame(actor_data))
 
-    covars = list(senders = senders_covar,
-                receivers = receivers_covar,
-                density = density_covar,
-                reciprocity = reciprocity_covar,
-                cross_density = cross_density_covar, 
-                cross_reciprocity = cross_reciprocity_covar)
+    # covars = list(senders = senders_covar,
+    #             receivers = receivers_covar,
+    #             density = density_covar,
+    #             reciprocity = reciprocity_covar,
+    #             cross_density = cross_density_covar, 
+    #             cross_reciprocity = cross_reciprocity_covar)
 
-    if (is.null(custom_covars)) {
-        covariates = covars
-    } else {
-        covariates = custom_covars
-    }
+    # if (is.null(custom_covars)) {
+    #     covariates = covars
+    # } else {
+    #     covariates = custom_covars
+    # }
     
-    stan_data = stan_data(network_data, actor_data, outcome, covars, custom_covars)
+    stan_data_no_prior = stan_data(data_p2,outcome, covariates)
+    priors <- default_priors(stan_data, outcome, covars)
 
     if (is.null(custom_priors)) {
-        priors <- default_priors(stan_data)
+        priors <- default_priors(stan_data, outcome, covars)
     } else {
         priors <- custom_priors
     }
 
-    stan_data = append(stan_data, priors)
 
     newMultiP2Fit = structure(
-                            list(stan_fit = NULL, summary = NULL, par_labels = NULL),
+                            list(stan_fit = NULL, summary = NULL, par_labels = NULL, priors=priors),
                             network_data=network_data,
                             actor_data=actor_data,
                             outcome=outcome,
                             pair_names=pairs,
                             covariates=covariates,
                             stan_data = stan_data,
-                            priors = priors,
                             class = "MultiP2Fit"
                             )
 
@@ -100,6 +98,7 @@ fit.MultiP2Fit <- function(model_obj, chains = 4, iter = 200, warmup = floor(ite
                      stan_file = "multiplex_p2_low_mem.stan", prior_sim = FALSE,...) {
     stan_data = attr(model_obj, "stan_data")
     stan_data$prior_sim = prior_sim
+    stan_data = append(stan_data, model_obj$priors)
     outcome = attr(model_obj, "outcome")
     
 
@@ -127,6 +126,36 @@ fit.MultiP2Fit <- function(model_obj, chains = 4, iter = 200, warmup = floor(ite
     model_obj$summary <- summary
     model_obj$par_labels <- par_labels
     return(model_obj)
+}
+
+#' get draws function
+#' 
+#' This function obtains the draws from the fitted Stan model of the MultiP2Fit class.
+#' 
+#' @param model_obj An object of class "MultiP2Fit"
+#' @return draws in the speficied format
+#' @export
+extract_network_draws <- function(model_obj, ...) {
+  UseMethod("extract_network_draws")
+}
+
+#' Extract simulated network outcome from the (prior) posterior of a fitted stan object of the MultiP2Fit class
+#' 
+#' @param model_obj  An object of class "MultiP2Fit"
+#' @param sim_num integer: number of simulations to extract, counting from the tail of the posterior draws
+#' @param network_type Type of network to return. Options are "adj" for adjacency matrix (default), "igraph" for igraph object, or "network" for network object, "dyad" for dyad form.
+#' @return A list of length `sim_num`. Each element of the list is another list of `t` networks. These networks represent the (prior) posterior draws of the simulated network outcome, in the specified format.
+#' @export
+extract_network_draws <- function(model_obj, sim_num, network_type = "adj") {
+    n <- attr(model_obj, "stan_data")$n
+    t <- attr(model_obj, "stan_data")$T
+    fit <- model_obj$stan_fit
+    network_draws <- extract_draws(fit, "y_tilde")
+    res <- tail.matrix(network_draws, sim_num)
+    if (network_type != "dyad") {
+        res <- dyads_to_matrix_list(dyad_df = res, n = n, t = t, network_type = network_type)
+    }
+    return(res)
 }
 
 
@@ -255,18 +284,4 @@ extract_draws <- function(fit, parameter) {
   return(res)
 }
 
-#' Extract simulated network outcome from the (prior) posterior of a fitted stan object
-#' 
-#' @param fit rstan fit object: fitted stan object
-#' @param sim_num integer: number of simulations to extract, counting from the tail of the posterior draws
-#' @param network_type Type of network to return. Options are "adj" for adjacency matrix (default), "igraph" for igraph object, or "network" for network object, "dyad" for dyad form.
-#' @return A list of length `sim_num`. Each element of the list is another list of `t` networks. These networks represent the (prior) posterior draws of the simulated network outcome, in the specified format.
-#' @export
-extract_network_draws <- function(fit, sim_num, n, t, network_type = "adj") {
-    network_draws <- extract_draws(fit, "y_tilde")
-    res <- tail.matrix(network_draws, sim_num)
-    if (network_type != "dyad") {
-        res <- dyads_to_matrix_list(dyad_df = res, n = n, t = t, network_type = network_type)
-    }
-    return(res)
-}
+

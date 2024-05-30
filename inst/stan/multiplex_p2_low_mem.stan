@@ -225,18 +225,6 @@ model {
   L_corr ~ lkj_corr_cholesky(LJK_eta_prior);
   sigma ~ inv_gamma(scale_alpha_prior,scale_beta_prior);
 
-  // mu ~ normal(0,10); //mu and rho are vectors but normal function is vectorized
-  // rho  ~ normal(0,10);
-  // cross_mu ~ normal(0,10);
-  // cross_rho ~ normal(0,10);
-
-  // L_corr ~ lkj_corr_cholesky(2);
-  // sigma ~ inv_gamma(3,50);
-  //Sigma ~ inv_wishart(2 * T + 1,diag_matrix(rep_vector(1,2*T)));
-  
-  // for (i in 1:n) {
-  //   C[i] ~ multi_normal(rep_vector(0,2*T),quad_form_diag(corr_R, sigma));
-  // }
 
   for (i in 1:sum(D_within[,1])) {
     mu_fixed_coef[i] ~ normal(mu_covariates_mean_prior[i],mu_covariates_sd_prior[i]);
@@ -271,13 +259,18 @@ model {
 }
 
 generated quantities{
-  //int y_tilde[N];
+  int y_tilde[N];
   cov_matrix[2*T] Sigma;
   Sigma = diag_pre_multiply(sigma, L_corr) * diag_pre_multiply(sigma, L_corr)';
+  matrix[N,K] x_beta;
+  
 
-  // for (k in 1:N) {
-  //    y_tilde[k] = categorical_logit_rng(x_beta[k]');
-  // }
+  if (prior_sim == 1) {
+    for (k in 1:N) {
+      y_tilde[k] = categorical_logit_rng(x_beta[k]');
+    }
+  }
+
   
 }
 

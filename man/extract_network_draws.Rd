@@ -2,20 +2,24 @@
 % Please edit documentation in R/classes.R
 \name{extract_network_draws}
 \alias{extract_network_draws}
-\title{Extract simulated network outcome from the (prior) posterior of a fitted stan object}
+\title{get draws function}
 \usage{
-extract_network_draws(fit, sim_num, n, t, network_type = "adj")
+extract_network_draws(model_obj, sim_num, network_type = "adj")
+
+extract_network_draws(model_obj, sim_num, network_type = "adj")
 }
 \arguments{
-\item{fit}{rstan fit object: fitted stan object}
+\item{model_obj}{An object of class "MultiP2Fit"}
 
 \item{sim_num}{integer: number of simulations to extract, counting from the tail of the posterior draws}
 
 \item{network_type}{Type of network to return. Options are "adj" for adjacency matrix (default), "igraph" for igraph object, or "network" for network object, "dyad" for dyad form.}
 }
 \value{
+draws in the speficied format
+
 A list of length \code{sim_num}. Each element of the list is another list of \code{t} networks. These networks represent the (prior) posterior draws of the simulated network outcome, in the specified format.
 }
 \description{
-Extract simulated network outcome from the (prior) posterior of a fitted stan object
+This function obtains the draws from the fitted Stan model of the MultiP2Fit class.
 }
