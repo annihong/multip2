@@ -56,7 +56,7 @@ matrix_to_dyads_1d <- function(M){
   y <- c()
   for (i in 1:n){
     for (j in i:n){
-      i_to_j = M[i,j]
+      i_to_j = M[i,j] 
       j_to_i = M[j,i]
       if (i != j) {
         outcome = 1

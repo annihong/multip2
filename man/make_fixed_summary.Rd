@@ -9,11 +9,11 @@ make_fixed_summary(fit, stan_data, outcome, pairs)
 \arguments{
 \item{fit}{rstan fit object: fitted stan object}
 
-\item{stan_data}{list: the "stan_data" attribute of the MultiP2Fit object}
+\item{stan_data}{list: the "stan_data" attribute of the Mp2Model object}
 
-\item{outcome}{vector: the "outcome" attribute of the MultiP2Fit object, names of the layers of the multiplex network}
+\item{outcome}{vector: the "outcome" attribute of the Mp2Model object, names of the layers of the multiplex network}
 
-\item{pairs}{vector: the "pair_names" attribute of the MultiP2Fit object, names of the pairs of layers of the multiplex network}
+\item{pairs}{vector: the "pair_names" attribute of the Mp2Model object, names of the pairs of layers of the multiplex network}
 }
 \value{
 a matrix of the model output summary of the fixed parameters (baseline and covariates effects)

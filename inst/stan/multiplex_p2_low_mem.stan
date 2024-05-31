@@ -259,18 +259,14 @@ model {
 }
 
 generated quantities{
-  int y_tilde[N];
+  //int y_tilde[N];
   cov_matrix[2*T] Sigma;
   Sigma = diag_pre_multiply(sigma, L_corr) * diag_pre_multiply(sigma, L_corr)';
-  matrix[N,K] x_beta;
-  
+  // if (prior_sim == 1) {
+  //   for (k in 1:N) {
+  //     y_tilde[k] = categorical_logit_rng(x_beta[k]');
+  //   }
+  // }
 
-  if (prior_sim == 1) {
-    for (k in 1:N) {
-      y_tilde[k] = categorical_logit_rng(x_beta[k]');
-    }
-  }
-
-  
 }
 

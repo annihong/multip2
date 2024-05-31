@@ -9,7 +9,7 @@ make_random_summary(fit, outcome)
 \arguments{
 \item{fit}{rstan fit object: fitted stan object}
 
-\item{outcome}{vector: the "outcome" attribute of the MultiP2Fit object, names of the layers of the multiplex network}
+\item{outcome}{vector: the "outcome" attribute of the Mp2Model object, names of the layers of the multiplex network}
 }
 \value{
 a matrix of the model output summary of the random parameters (the estimated variance-covariance matrix)

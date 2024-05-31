@@ -7,10 +7,10 @@
 fit(model_obj, ...)
 }
 \arguments{
-\item{model_obj}{An object of class "MultiP2Fit"}
+\item{model_obj}{An object of class "Mp2Model"}
 }
 \value{
-An object of class "MultiP2Fit" with the fitted Stan model and parameter labels
+An object of class "Mp2Model" with the fitted Stan model and parameter labels
 }
 \description{
 This function performs the estimation of the multiplex P2 model using Stan.

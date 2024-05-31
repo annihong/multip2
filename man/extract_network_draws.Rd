@@ -9,7 +9,7 @@ extract_network_draws(model_obj, sim_num, network_type = "adj")
 extract_network_draws(model_obj, sim_num, network_type = "adj")
 }
 \arguments{
-\item{model_obj}{An object of class "MultiP2Fit"}
+\item{model_obj}{An object of class "Mp2Model"}
 
 \item{sim_num}{integer: number of simulations to extract, counting from the tail of the posterior draws}
 
@@ -21,5 +21,5 @@ draws in the speficied format
 A list of length \code{sim_num}. Each element of the list is another list of \code{t} networks. These networks represent the (prior) posterior draws of the simulated network outcome, in the specified format.
 }
 \description{
-This function obtains the draws from the fitted Stan model of the MultiP2Fit class.
+This function obtains the draws from the fitted Stan model of the Mp2Model class.
 }
