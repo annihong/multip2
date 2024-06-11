@@ -24,7 +24,7 @@ intpos <- read.table(file=system.file("data-raw", "intpos.csv", package="multipl
 types <- read.table(file=system.file("data-raw", "orgtypes.csv", package="multiplexP2"), header=T, row.names="label", sep=";")
 
 # apply some changes to the data to make them network-compatible
-types <- types == "gov"
+govt <- types == "gov"
 prefsim <- dist(intpos, method="euclidean", diag=F, upper=T) # equation 2
 prefsim <- max(prefsim) - prefsim # equation 3
 prefsim <- as.matrix(prefsim)
@@ -37,6 +37,6 @@ ChemNet <- list(
   "pol" = pol,
   "sci" = sci,
   "prefsim" = prefsim,
-  "types" = types
+  "govt" = govt
 )
 usethis::use_data(ChemNet, overwrite = TRUE)
