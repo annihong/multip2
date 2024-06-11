@@ -69,7 +69,14 @@ covariates_helper <- function(t, H, covars, outcome, network_data, actor_data) {
 #' covariate <- list(is_within = {T, F}, t_or_h, var_name, value)
 #'
 #' @return A list of covariates formatted to be estimated via multiplex_p2.stan 
-format_covariates <- function(t, H, n, covariates) {
+format_covariate <- function(t, H, n, covariates, prior, data) {
+    dict_var_name_to_prior_name <- list("density" = c("mu_covariates_mean_prior", "mu_covariates_sd_prior"), 
+                                        "reciprocity" = c("rho_covariates_mean_prior", "rho_covariates_sd_prior"),
+                                        "sender" = c("alpha_covariates_mean_prior", "alpha_covariates_sd_prior"),
+                                        "receiver" = c("beta_covariates_mean_prior", "beta_covariates_sd_prior"),
+                                        "cross_density" = c("cross_mu_covariates_mean_prior", "cross_mu_covariates_sd_prior"),
+                                        "cross_reciprocity" = c("cross_rho_covariates_mean_prior", "cross_rho_covariates_sd_prior"))
+
     D_within = matrix(rep(0, t*4), ncol=4, dimnames = list(1:t, c("density", "reciprocity", "sender", "receiver"))) # no covariates
     if (H == 0) { #uniplex network
         D_cross = matrix(rep(0, H*2), ncol = 2)
@@ -87,23 +94,32 @@ format_covariates <- function(t, H, n, covariates) {
                             )
 
     for (covar_name in names(covariates)) {
+        #print(covar_name)
         covariate = covariates[[covar_name]]
-        var_name = covariate$var_name
-        value = covariate$value
-        names(value) = covar_name
+        var_name = covariate$var_name # sender, receiver, density, reciprocity, cross_density, cross_reciprocity
+        covar_lab = covariate$covar_lab
+        if (covar_lab %in% names(data$dyad_covar)) {
+            value = data$dyad_covar[[covar_lab]]
+        } else {
+            value = data$actor_covar[[covar_lab]]
+        }
 
         if (covariate$is_within) {
             t = covariate$t_or_h
             D_within[t, var_name] = D_within[t, var_name] + 1
-            if (sum(dim(value)) == 2*n) { #dyadic covar
+            if (sum(dim(value)) == 2*n) { #dyadic covar density, reciprocity,
                 dim(value) <- c(n, n, 1)
                 dimnames(value)[[3]] <- covar_name
                 covariates_stan[[var_name]] <- abind::abind(covariates_stan[[var_name]], value, along = 3)
-            } else { # actor covar 
+                #update prior
+
+            } else { # actor covar  sender, receiver,
+                new_names <- c(colnames(covariates_stan[[var_name]]), covar_name)
                 covariates_stan[[var_name]] <- cbind(covariates_stan[[var_name]], value)
+                colnames(covariates_stan[[var_name]]) <- new_names
             }
             
-        } else {
+        } else { #cross_density, cross_reciprocity
             h = covariate$t_or_h
             D_cross[h, var_name] = D_cross[h, var_name] + 1
             dim(value) <- c(n, n, 1)
@@ -119,15 +135,9 @@ format_covariates <- function(t, H, n, covariates) {
                             mu_covariates=covariates_stan$density, 
                             rho_covariates=covariates_stan$reciprocity,
                             cross_mu_covariates=covariates_stan$cross_density, 
-                            cross_rho_covariates=covariates_stan$cross_reciprocity,
-                            alpha_covariates_S = array(apply(covariates_stan$sender, 2, stats::sd)),
-                            beta_covariates_S = array(apply(covariates_stan$receiver, 2, stats::sd)),
-                            mu_covariates_S = array(apply(covariates_stan$density, 3, stats::sd)),
-                            rho_covariates_S = array(apply(covariates_stan$reciprocity, 3, stats::sd)),
-                            cross_mu_covariates_S = array(apply(covariates_stan$cross_density, 3, stats::sd)),
-                            cross_rho_covariates_S = array(apply(covariates_stan$cross_reciprocity, 3, stats::sd))
+                            cross_rho_covariates=covariates_stan$cross_reciprocity
                             )
-
+    #print(dim(covariates_data$mu_covariates))
     return(covariates_data)
 
 }
@@ -145,12 +155,62 @@ format_network <- function(M) {
     K = 2^(2*t) # number of possible outcomes on a dyad
     pairs = get_dyads(t) # pairs of networks 
     y = matrix_to_dyads_nd(M) # observed networks as dyadic outcomes
+    obs_idx = which(!is.na(y)) # indices of observed dyads
+    y_obs = y[obs_idx] # observed dyads
 
-    network_data = list(n=n, N=N, T=t, H=H, layer_pairs=pairs,y_obs=y, K=K, N_obs = length(y),obs_idx = 1:N)
+    network_data = list(n=n, N=N, T=t, H=H, layer_pairs=pairs,y_obs=y_obs, K=K, N_obs = length(y_obs),obs_idx = obs_idx)
 
     return(network_data)
 }
 
+#IP
+format_prior <- function(baseline_prior, covariates, data) {
+    dict_var_name_to_prior_name <- list("density" = c("mu_covariates_mean_prior", "mu_covariates_sd_prior"), 
+                                        "reciprocity" = c("rho_covariates_mean_prior", "rho_covariates_sd_prior"),
+                                        "sender" = c("alpha_covariates_mean_prior", "alpha_covariates_sd_prior"),
+                                        "receiver" = c("beta_covariates_mean_prior", "beta_covariates_sd_prior"),
+                                        "cross_density" = c("cross_mu_covariates_mean_prior", "cross_mu_covariates_sd_prior"),
+                                        "cross_reciprocity" = c("cross_rho_covariates_mean_prior", "cross_rho_covariates_sd_prior"))
+    prior <- list(mu_covariates_mean_prior = array(0, 0),
+            mu_covariates_sd_prior = array(0, 0),
+            rho_covariates_mean_prior = array(0, 0),
+            rho_covariates_sd_prior = array(0, 0),
+            cross_mu_covariates_mean_prior = array(0, 0),
+            cross_mu_covariates_sd_prior = array(0, 0),
+            cross_rho_covariates_mean_prior = array(0, 0),
+            cross_rho_covariates_sd_prior = array(0, 0),
+            alpha_covariates_mean_prior = array(0, 0),
+            alpha_covariates_sd_prior = array(0, 0),
+            beta_covariates_mean_prior = array(0, 0),
+            beta_covariates_sd_prior = array(0, 0))
+
+    for (covar_name in names(covariates)) {
+        covariate = covariates[[covar_name]]
+        var_name = covariate$var_name # sender, receiver, density, reciprocity, cross_density, cross_reciprocity
+        covar_lab = covariate$covar_lab
+        if (covar_lab %in% names(data$dyad_covar)) {
+            value = data$dyad_covar[[covar_lab]]
+        } else {
+            value = data$actor_covar[[covar_lab]]
+        }
+        
+        #update prior
+        prior_mean_name = dict_var_name_to_prior_name[[var_name]][1]
+        prior_sd_name = dict_var_name_to_prior_name[[var_name]][2]
+
+        prior_mean_val = ifelse(is.null(covariate$mean_prior), 0, covariate$mean_prior)
+        prior_sd_val = ifelse(is.null(covariate$sd_prior), 10/sd(value), covariate$sd_prior)
+
+        new_names <- c(names(prior[[prior_mean_name]]), covar_name)
+        prior[[prior_mean_name]] <- array(append(prior[[prior_mean_name]], prior_mean_val))
+        prior[[prior_sd_name]] <- array(append(prior[[prior_sd_name]], prior_sd_val))
+        #print(dim(prior[[prior_mean_name]]))
+        names(prior[[prior_mean_name]]) <- new_names
+        names(prior[[prior_sd_name]]) <- new_names
+
+    }
+    return(append(baseline_prior, prior))
+}
 
 #' The main function to convert user network input to Stan data
 #' 
@@ -160,55 +220,14 @@ format_network <- function(M) {
 
 create_stan_data <- function(model_obj) {
     stan_data_net = format_network(model_obj$data$dep_net)
-    stan_data_covar = format_covariates(model_obj$t, model_obj$H, model_obj$n, model_obj$model$covar)
-    stan_data_prior = model_obj$model$prior
+    stan_data_covar = format_covariate(model_obj$t, model_obj$H, model_obj$n, model_obj$model$covar, data = model_obj$data)
+    stan_data_prior = format_prior(model_obj$model$prior, model_obj$model$covar, model_obj$data)
     stan_data = c(stan_data_net, stan_data_covar, stan_data_prior)
-    return(stan_data)
+    model_obj$model$full_prior = stan_data_prior
+    model_obj$fit_res$stan_data = stan_data
+    return(model_obj)
 }
 
-# default_priors <- function(stan_data, outcome, covars) {
-
-#     t = stan_data$T
-#     H = stan_data$H
-#     n = stan_data$n
-#     pairs=unlist(get_pair_names(outcome)) 
-
-#     priors <- list(
-#             mu_mean_prior = array(0, t), 
-#             mu_sd_prior = array(10, t), 
-#             rho_mean_prior = array(0, t),
-#             rho_sd_prior = array(10, t),
-#             cross_mu_mean_prior = array(0, H),
-#             cross_mu_sd_prior = array(10, H),
-#             cross_rho_mean_prior = array(0, H),
-#             cross_rho_sd_prior = array(10, H),
-#             mu_covariates_mean_prior = array(0, length(stan_data$mu_covariates_S)),
-#             mu_covariates_sd_prior = 10/stan_data$mu_covariates_S,
-#             rho_covariates_mean_prior = rep(0, length(stan_data$rho_covariates_S)),
-#             rho_covariates_sd_prior = 10/stan_data$rho_covariates_S,
-#             cross_mu_covariates_mean_prior = array(0, length(stan_data$cross_mu_covariates_S)),
-#             cross_mu_covariates_sd_prior = 10/stan_data$cross_mu_covariates_S,
-#             cross_rho_covariates_mean_prior = array(0, length(stan_data$cross_rho_covariates_S)),
-#             cross_rho_covariates_sd_prior = 10/stan_data$cross_rho_covariates_S,
-#             alpha_covariates_mean_prior = array(0, length(stan_data$alpha_covariates_S)),
-#             alpha_covariates_sd_prior = 10/stan_data$alpha_covariates_S,
-#             beta_covariates_mean_prior = array(0, length(stan_data$beta_covariates_S)),
-#             beta_covariates_sd_prior = 10/stan_data$beta_covariates_S,
-#             scale_alpha_prior = 3,
-#             scale_beta_prior = 50,
-#             LJK_eta_prior = 2
-#         )
-        
-#     priors[c("mu_mean_prior", "mu_sd_prior", "rho_mean_prior", "rho_sd_prior")] <- lapply(priors[c("mu_mean_prior", "mu_sd_prior", "rho_mean_prior", "rho_sd_prior")], function(x) setNames(x, outcome))
-#     priors[c("cross_mu_mean_prior", "cross_mu_sd_prior", "cross_rho_mean_prior", "cross_rho_sd_prior")] <- lapply(priors[c("cross_mu_mean_prior", "cross_mu_sd_prior", "cross_rho_mean_prior", "cross_rho_sd_prior")], function(x) setNames(x, pairs))
-#     priors[c("mu_covariates_mean_prior", "mu_covariates_sd_prior")] <- lapply(priors[c("mu_covariates_mean_prior", "mu_covariates_sd_prior")], function(x) setNames(x, dimnames(stan_data[["mu_covariates"]])[[3]]))
-#     priors[c("rho_covariates_mean_prior", "rho_covariates_sd_prior")] <- lapply(priors[c("rho_covariates_mean_prior", "rho_covariates_sd_prior")], function(x) setNames(x, dimnames(stan_data[["rho_covariates"]])[[3]]))
-#     priors[c("cross_mu_covariates_mean_prior", "cross_mu_covariates_sd_prior")] <- lapply(priors[c("cross_mu_covariates_mean_prior", "cross_mu_covariates_sd_prior")], function(x) setNames(x, dimnames(stan_data[["cross_mu_covariates"]])[[3]]))
-#     priors[c("cross_rho_covariates_mean_prior", "cross_rho_covariates_sd_prior")] <- lapply(priors[c("cross_rho_covariates_mean_prior", "cross_rho_covariates_sd_prior")], function(x) setNames(x, dimnames(stan_data[["cross_rho_covariates"]])[[3]]))
-#     priors[c("alpha_covariates_mean_prior", "alpha_covariates_sd_prior")] <- lapply(priors[c("alpha_covariates_mean_prior", "alpha_covariates_sd_prior")], function(x) setNames(x, dimnames(stan_data[["alpha_covariates"]])[[2]]))
-#     priors[c("beta_covariates_mean_prior", "beta_covariates_sd_prior")] <- lapply(priors[c("beta_covariates_mean_prior", "beta_covariates_sd_prior")], function(x) setNames(x, dimnames(stan_data[["beta_covariates"]])[[2]]))
-#     return(priors)
-# }
 
 default_prior_empty_mdl <- function(t, H, dep_lab, pair_lab) {
     prior <- list( 
@@ -228,18 +247,7 @@ default_prior_empty_mdl <- function(t, H, dep_lab, pair_lab) {
     prior[c("mu_mean_prior", "mu_sd_prior", "rho_mean_prior", "rho_sd_prior")] <- lapply(prior[c("mu_mean_prior", "mu_sd_prior", "rho_mean_prior", "rho_sd_prior")], function(x) setNames(x, dep_lab))
     prior[c("cross_mu_mean_prior", "cross_mu_sd_prior", "cross_rho_mean_prior", "cross_rho_sd_prior")] <- lapply(prior[c("cross_mu_mean_prior", "cross_mu_sd_prior", "cross_rho_mean_prior", "cross_rho_sd_prior")], function(x) setNames(x, pair_lab))
 
-    covar_prior <- list(mu_covariates_mean_prior = array(0, 0),
-        mu_covariates_sd_prior = array(0, 0),
-        rho_covariates_mean_prior = array(0, 0),
-        rho_covariates_sd_prior = array(0, 0),
-        cross_mu_covariates_mean_prior = array(0, 0),
-        cross_mu_covariates_sd_prior = array(0, 0),
-        cross_rho_covariates_mean_prior = array(0, 0),
-        cross_rho_covariates_sd_prior = array(0, 0),
-        alpha_covariates_mean_prior = array(0, 0),
-        alpha_covariates_sd_prior = array(0, 0),
-        beta_covariates_mean_prior = array(0, 0),
-        beta_covariates_sd_prior = array(0, 0))
-    return(append(prior, covar_prior))
+
+    return(prior)
 }
 

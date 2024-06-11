@@ -13,6 +13,8 @@
   seed = sample.int(.Machine$integer.max, 1),
   stan_file = "multiplex_p2_low_mem.stan",
   prior_sim = FALSE,
+  mc.cores = parallel::detectCores(),
+  auto_write = TRUE,
   ...
 )
 }

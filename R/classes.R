@@ -21,13 +21,15 @@
 #' @param stan_file A character string indicating the name of the stan file to use, default is "multiplex_p2.stan".
 #' @return A list containing the fitted Stan model and parameter labels.
 #' @export
-
-
 #create a default empty model. 
 Mp2Model <- function(dep_net, dyad_covar=NULL, actor_covar=NULL, ...) {
-    # stopifnot(is_valid(dep_net, type = "dep_net"))
-    # stopifnot(is_valid(dyad_covar, type = "dyad_covar"))
-    # stopifnot(is_valid(actor_covar, type = "actor_covar"))
+    stopifnot(is_valid(dep_net, type = "dep_net"))
+    if (!is.null(dyad_covar)) {
+        stopifnot(is_valid(dyad_covar, type = "dyad_covar"))
+    }
+    if (!is.null(actor_covar)) {
+        stopifnot(is_valid(actor_covar, type = "actor_covar"))
+    }
 
     t = length(dep_net)
     H = t*(t - 1)/2
@@ -43,7 +45,7 @@ Mp2Model <- function(dep_net, dyad_covar=NULL, actor_covar=NULL, ...) {
         dep_lab =dep_lab, pair_lab = pair_lab,
         dyad_covar_lab = names(dyad_covar), actor_covar_lab = names(actor_covar),
         data = list(dep_net = dep_net, dyad_covar = dyad_covar, actor_covar = actor_covar),
-        model = list(covar=covar, prior=prior),
+        model = list(covar=covar, prior=prior, full_prior=NULL),
         fit_res = list(stan_data = NULL, stan_fit = NULL, summary = NULL, par_labels = NULL)),
         class = "Mp2Model")
 
@@ -51,61 +53,226 @@ Mp2Model <- function(dep_net, dyad_covar=NULL, actor_covar=NULL, ...) {
 }
 
 #' Add covariates to the model
-add_covar <- function(model_obj,...) {
-  UseMethod("add_covar")
-}
+#' 
+#' This function adds covariates to the model object. It supports different types of covariates, such as within-layer covariates and cross-layer covariates. The function checks the type of covariate and adds it to the appropriate section of the model object.
+#' 
+#' @param model_obj The model object to which the covariate will be added.
+#' @param covar_lab The label of the covariate.
+#' @param param The parameter associated with the covariate.
+#' @param layer_lab The label of the layer (for within-layer covariates) or pair (for cross-layer covariates) to which the covariate belongs. If not specified, the covariate will be added to all layers or pairs.
+#' @param mean_prior The mean prior for the covariate. If not specified, no prior will be used.
+#' @param sd_prior The standard deviation prior for the covariate. If not specified, no prior will be used.
+#' 
+#' @return The updated model object with the added covariate.
+#' @export
+# add_covar <- function(model_obj,...) {
+#   UseMethod("add_covar")
+# }
 
-# param = c("density", "reciprocity", "sender", "receiver"), c("cross_density", "cross_reciprocity")
-#list(var_name=var_name, t_or_h=t_or_h, is_within=is_within, value=value)
+#' Add covariates to the model
+#' 
+#' This function adds covariates to the model object. It supports different types of covariates, such as within-layer covariates and cross-layer covariates. The function checks the type of covariate and adds it to the appropriate section of the model object.
+#' 
+#' @param model_obj The model object to which the covariate will be added.
+#' @param covar_lab The label of the covariate.
+#' @param param The parameter associated with the covariate.
+#' @param layer_lab The label of the layer (for within-layer covariates) or pair (for cross-layer covariates) to which the covariate belongs. If not specified, the covariate will be added to all layers or pairs.
+#' @param mean_prior The mean prior for the covariate. If not specified, no prior will be used.
+#' @param sd_prior The standard deviation prior for the covariate. If not specified, no prior will be used.
+#' 
+#' @return The updated model object with the added covariate.
+#' @export
+# add_covar.Mp2Model <- function(model_obj, covar_lab, param, layer_lab=NULL, mean_prior=NULL, sd_prior=NULL,...) {
+#     create_covar <- function(var_name, t_or_h, is_within, value, mean_prior, sd_prior) {
+#         return(list(var_name=var_name, t_or_h=t_or_h, is_within=is_within, value=value, mean_prior=mean_prior, sd_prior=sd_prior))
+#     }
+    
+#     within_param <- c("density", "reciprocity", "sender", "receiver")
+#     cross_param <- c("cross_density", "cross_reciprocity")
+#     dyad_param <- c("density", "reciprocity", "cross_density", "cross_reciprocity")
+#     actor_param <- c("sender", "receiver")
 
-add_covar.Mp2Model <- function(model_obj, covar_lab, param, layer_lab=NULL, mean_prior=NULL, sd_prior=NULL ...) {
-    create_covar <- function(var_name, t_or_h, is_within, value) {
-        return(list(var_name=var_name, t_or_h=t_or_h, is_within=is_within, value=value))
+#     if (param %in% dyad_param) {
+#         value = model_obj$data$dyad_covar[[covar_lab]]
+#     } else if (param %in% actor_param) {
+#         value = model_obj$data$actor_covar[[covar_lab]]
+#     } else {
+#         stop("Invalid param")
+#     }
+#     if (is.null(value)) {
+#         stop("Covariate not found")
+#     }
+
+#     #names(res) = paste(var_name, covar, outcome, sep="_")
+#     if (param %in% within_param) {
+#         is_within = TRUE
+#         if (is.null(layer_lab)) {
+#             idx_seq = 1:model_obj$t
+#             layer_lab = model_obj$dep_lab
+#         }else{
+#             idx_seq = which(model_obj$dep_lab == layer_lab)
+#         }
+#     } else if (param %in% cross_param) {
+#         is_within = FALSE
+#         if (is.null(layer_lab)) {
+#             idx_seq = 1:model_obj$H
+#             layer_lab = model_obj$pair_lab
+#         }else{
+#             idx_seq = which(model_obj$pair_lab == layer_lab)
+#         }
+#     } else {
+#         stop("Invalid parameter")
+#     }
+
+#     res = lapply(idx_seq, create_covar, var_name=param, is_within=is_within, value=value, mean_prior=mean_prior, sd_prior=sd_prior)
+#     names(res) = paste(param, covar_lab, layer_lab, sep="_")
+#     for (covar_name in names(res)) {
+#         if (covar_name %in% names(model_obj$model$covar)) {
+#             print("Covariate already exists, overwriting.")
+#         }
+#         model_obj$model$covar[[covar_name]] = res[[covar_name]]
+#     }
+#     return(model_obj)
+# }
+
+update_covar <- function(model_obj, layer_1, layer_2=NULL, density=NULL, reciprocity=NULL, cross_density=NULL, cross_reciprocity=NULL, sender=NULL, receiver=NULL) {
+
+    create_covar <- function(var_name, t_or_h, is_within, covar_lab, mean_prior=NULL, sd_prior=NULL) {
+        return(list(var_name=var_name, t_or_h=t_or_h, is_within=is_within, covar_lab=covar_lab, mean_prior=mean_prior, sd_prior=sd_prior))
     }
-    within_param <- c("density", "reciprocity", "sender", "receiver")
-    cross_param <- c("cross_density", "cross_reciprocity")
-    dyad_param <- c("density", "reciprocity", "cross_density", "cross_reciprocity")
-    actor_param <- c("sender", "receiver")
 
-    if (param %in% dyad_param) {
-        value = model_obj$data$dyad_covar[[covar_lab]]
-    } else if (param %in% actor_param) {
-        value = model_obj$data$actor_covar[[covar_lab]]
-    } else {
-        stop("Invalid param")
-    }
-    if (is.null(value)) {
-        stop("Covariate not found")
-    }
+    params <- list("density" = density, "reciprocity" = reciprocity, "cross_density" = cross_density, "cross_reciprocity" = cross_reciprocity, "sender" = sender, "receiver" = receiver)
 
-    #names(res) = paste(var_name, covar, outcome, sep="_")
-    if (param %in% within_param) {
-        is_within = TRUE
-        if (is.null(layer_lab)) {
-            idx_seq = 1:model_obj$t
-            layer_lab = model_obj$dep_lab
-        }else{
-            idx_seq = which(model_obj$dep_lab == layer_lab)
+    covariates = model_obj$model$covar
+
+    if (is.null(layer_2)) { # within-layer covariates
+        idx_seq = which(model_obj$dep_lab == layer_1)
+        if (length(idx_seq) == 0) {
+            stop("Layer not found")
         }
-    } else if (param %in% cross_param) {
-        is_within = FALSE
-        if (is.null(layer_lab)) {
-            idx_seq = 1:model_obj$H
-            layer_lab = model_obj$pair_lab
-        }else{
-            idx_seq = which(model_obj$pair_lab == layer_lab)
+        for (param_name in c("density", "reciprocity", "sender", "receiver")) {
+            for (covar in params[[param_name]]) {
+                if (! covar %in% names(model_obj$data$dyad_covar) && ! covar %in% names(model_obj$data$actor_covar)) {
+                    stop("Covariate not found")
+                }
+                res = create_covar(param_name, idx_seq, TRUE, covar)
+                name = paste(param_name, covar, layer_1, sep="_")
+                covariates[[name]] = res
+            }
         }
-    } else {
-        stop("Invalid parameter")
+    } else { # cross-layer covariates
+        layer_1_idx = which(model_obj$dep_lab == layer_1)
+        layer_2_idx = which(model_obj$dep_lab == layer_2)
+        print(layer_1_idx)
+        print(layer_2_idx)
+        if (layer_1_idx < layer_2_idx) {
+            pair_lab = paste(layer_1, layer_2, sep=":")
+            idx_seq = which(model_obj$pair_lab == pair_lab)
+        } else {
+            pair_lab = paste(layer_2, layer_1, sep=":")
+            idx_seq = which(model_obj$pair_lab == pair_lab)
+        }
+
+        if (length(idx_seq) == 0) {
+            stop("Pair of layers not found")
+        }
+        
+        for (param_name in c("cross_density", "cross_reciprocity")) {
+            for (covar in params[[param_name]]) {
+                if (! covar %in% names(model_obj$data$dyad_covar)) {
+                    stop("Covariate not found")
+                }
+                res = create_covar(param_name, idx_seq, FALSE, covar)
+                name = paste(param_name, covar, layer_1, layer_2, sep="_")
+                covariates[[name]] = res
+            }
+        }
     }
 
-    res = lapply(idx_seq, create_covar, var_name=param, is_within=is_within, value=value)
-    names(res) = paste(param, covar_lab, layer_lab, sep="_")
-    model_obj$model$covar = append(model_obj$model$covar, res)
-
+    model_obj$model$covar = covariates
     return(model_obj)
+
 }
 
+#param: "density", "reciprocity",  "cross_density", "cross_reciprocity", "sender", "receiver", "LKJ"
+# layer_lab: layer name or pair name, null means all layers
+# type: baseline, covariate
+# covar_lab: covariate name, null if it's not covariate prior
+# optional: mean, sd, eta, alpha, beta
+# used before fitting the model
+#' Update prior parameters in the model
+#'
+#' @param model_obj An object of the model where the prior parameters will be updated.
+#' @param param A character string indicating the parameter to be updated. It can be one of "density", "reciprocity", "cross_density", "cross_reciprocity", "sender", "receiver", "LKJ".
+#' @param type A character string indicating the type of the parameter. It can be one of "baseline", "random", "covariate".
+#' @param layer_lab A character string indicating the layer name or pair name. If NULL, all layers will be updated.
+#' @param covar_lab A character string indicating the covariate name if type = "covariate".
+#' @param mean The new mean value for the prior parameter. If NULL, the mean value will not be updated.
+#' @param sd The new standard deviation for the prior parameter. If NULL, the standard deviation will not be updated.
+#' @param eta The new eta value for the prior parameter LJK_eta. If NULL, the eta value will not be updated.
+#' @param alpha The new alpha value for the prior parameter scale_alpha. If NULL, the alpha value will not be updated.
+#' @param beta The new beta value for the prior parameter scale_beta. If NULL, the beta value will not be updated.
+#' @param ... Additional arguments.
+#' @return The updated model object.
+#' @examples
+#' # TODO: Add examples of usage
+#' @export
+update_prior <- function(model_obj, param, type, layer_lab=NULL, covar_lab=NULL, mean=NULL, sd=NULL, eta=NULL, alpha=NULL, beta=NULL, ...){
+    dict_baseline <- list("density" = "mu", "reciprocity" = "rho", "cross_density" = "cross_mu", "cross_reciprocity" = "cross_rho")
+
+    if (param %in% c("cross_density", "cross_reciprocity")) {
+        layer_lab = ifelse_helper(is.null(layer_lab), model_obj$pair_lab, layer_lab)
+    } else if (param %in% c("density", "reciprocity", "sender", "receiver")) {
+        layer_lab = ifelse_helper(is.null(layer_lab), model_obj$dep_lab, layer_lab)
+    } else {
+        layer_lab = NULL
+    }
+    prior = model_obj$model$prior
+
+    if (type == "baseline") {
+        if (!param %in% names(dict_baseline)) {
+            stop("Invalid baseline parameter")
+        }
+        prior_param = dict_baseline[[param]]
+        if (!is.null(mean)) {
+            prior_name = paste(prior_param, "mean_prior", sep="_")
+            prior[[prior_name]][layer_lab] = mean
+        }
+
+        if (!is.null(sd)) {
+            prior_name = paste(prior_param, "sd_prior", sep="_")
+            prior[[prior_name]][layer_lab] = sd
+        }
+        
+    } else if(type == "random") {
+       eta_name = "LJK_eta_prior"
+       beta_name = "scale_beta_prior"
+       alpha_name = "scale_alpha_prior"
+       prior[[eta_name]] = ifelse_helper(is.null(eta), prior[[eta_name]], eta)
+       prior[[beta_name]] = ifelse_helper(is.null(beta), prior[[beta_name]], beta)
+       prior[[alpha_name]] = ifelse_helper(is.null(alpha), prior[[alpha_name]], alpha)
+
+    } else if(type == "covariate") {
+        if (is.null(covar_lab)) {
+            stop("Covariate label is required for covariate prior")
+        }
+        covar_names = paste(param, covar_lab, layer_lab, sep="_")
+        for (covar_name in covar_names) {
+            if (! covar_name %in% names(model_obj$model$covar)) {
+                stop("Covariate not found")
+            }
+            model_obj$model$covar[[covar_name]]$mean_prior <- ifelse_helper(is.null(mean), model_obj$model$covar[[covar_name]]$mean_prior, mean)
+            model_obj$model$covar[[covar_name]]$sd_prior <- ifelse_helper(is.null(sd), model_obj$model$covar[[covar_name]]$sd_prior, sd)
+        }
+
+    } else {
+        stop("Invalid type")
+    }
+
+    model_obj$model$prior <- prior
+    return(model_obj)
+
+}
 
 #' fit function
 #' 
@@ -129,9 +296,10 @@ fit.Mp2Model <- function(model_obj, chains = 4, iter = 200, warmup = floor(iter/
                      thin = 1, seed = sample.int(.Machine$integer.max, 1),
                      stan_file = "multiplex_p2_low_mem.stan", prior_sim = FALSE,mc.cores = parallel::detectCores(), auto_write = TRUE,...) {
 
-    stan_data <- create_stan_data(model_obj)
-    stan_data$prior_sim = prior_sim
-
+    model_obj <- create_stan_data(model_obj)
+    model_obj$fit_res$stan_data$prior_sim = prior_sim
+    stan_data = model_obj$fit_res$stan_data
+    # print(stan_data)
     options(mc.cores =mc.cores)
     rstan::rstan_options(auto_write = auto_write)
     
@@ -145,7 +313,6 @@ fit.Mp2Model <- function(model_obj, chains = 4, iter = 200, warmup = floor(iter/
                     thin = thin,
                     seed = seed
                     )
-    model_obj$fit_res$stan_data <- stan_data
     model_obj$fit_res$stan_fit <- p2_fit
     s <- create_summary(model_obj)
     model_obj$fit_res$summary <- s$summary
@@ -164,6 +331,8 @@ fit.Mp2Model <- function(model_obj, chains = 4, iter = 200, warmup = floor(iter/
 create_summary <- function(model_obj) {
     pair_lab= model_obj$pair_lab
     dep_lab = model_obj$dep_lab
+    stan_data = model_obj$fit_res$stan_data
+    p2_fit = model_obj$fit_res$stan_fit
     fixed_summary <- make_fixed_summary(p2_fit, stan_data, dep_lab, pair_lab)
     random_summary <- make_random_summary(p2_fit, dep_lab)         
     summary <- list("fixed" = fixed_summary$summary, "random" = random_summary$summary)
@@ -187,17 +356,21 @@ extract_network_draws <- function(model_obj, ...) {
 #' 
 #' @param model_obj  An object of class "Mp2Model"
 #' @param sim_num integer: number of simulations to extract, counting from the tail of the posterior draws
-#' @param network_type Type of network to return. Options are "adj" for adjacency matrix (default), "igraph" for igraph object, or "network" for network object, "dyad" for dyad form.
+#' @param network_type string: type of network to return. Options are "adj" for adjacency matrix (default), "igraph" for igraph object, or "network" for network object.
 #' @return A list of length `sim_num`. Each element of the list is another list of `t` networks. These networks represent the (prior) posterior draws of the simulated network outcome, in the specified format.
 #' @export
 extract_network_draws <- function(model_obj, sim_num, network_type = "adj") {
-    n <- attr(model_obj, "stan_data")$n
-    t <- attr(model_obj, "stan_data")$T
-    fit <- model_obj$stan_fit
+    n <- model_obj$n
+    t <- model_obj$t
+    fit <- model_obj$fit_res$stan_fit
     network_draws <- extract_draws(fit, "y_tilde")
     res <- tail.matrix(network_draws, sim_num)
+
     if (network_type != "dyad") {
-        res <- dyads_to_matrix_list(dyad_df = res, n = n, t = t, network_type = network_type)
+        res <- dyads_to_matrix_list(dyad_df = res, n = n, t = t, dep_lab = model_obj$dep_lab, network_type = network_type)
+    }
+    if (length(res[[1]]) < sim_num) {
+        print("Number of draws is less than total iterations. Returning all draws.")
     }
     return(res)
 }
@@ -205,7 +378,7 @@ extract_network_draws <- function(model_obj, sim_num, network_type = "adj") {
 
 #' @export
 summary.Mp2Model <- function(model_obj, ...) {
-    s <- model_obj$summary
+    s <- model_obj$fit_res$summary
     print(s)
     
 }

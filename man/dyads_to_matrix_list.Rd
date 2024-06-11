@@ -4,7 +4,7 @@
 \alias{dyads_to_matrix_list}
 \title{Convert Dyadic Data to List of Adjacency Matrices}
 \usage{
-dyads_to_matrix_list(dyad_df, n, t, network_type = "adj")
+dyads_to_matrix_list(dyad_df, n, t, dep_lab, network_type)
 }
 \arguments{
 \item{dyad_df}{A B x N dataframe where each row is a network in dyad form.}

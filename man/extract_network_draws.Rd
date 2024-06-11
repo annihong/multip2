@@ -13,7 +13,7 @@ extract_network_draws(model_obj, sim_num, network_type = "adj")
 
 \item{sim_num}{integer: number of simulations to extract, counting from the tail of the posterior draws}
 
-\item{network_type}{Type of network to return. Options are "adj" for adjacency matrix (default), "igraph" for igraph object, or "network" for network object, "dyad" for dyad form.}
+\item{network_type}{string: type of network to return. Options are "adj" for adjacency matrix (default), "igraph" for igraph object, or "network" for network object.}
 }
 \value{
 draws in the speficied format

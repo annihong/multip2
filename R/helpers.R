@@ -50,22 +50,23 @@ matrix_to_dyads_nd <- function(Ms) {
 #' @param M a single adj matrices representing one layer of the multiplex network
 #'
 #' @return return a vector y of size N the dyad-wise outcome y in {1,2,3,4}^N
-
+#' @export
 matrix_to_dyads_1d <- function(M){
   n = nrow(M)
   y <- c()
   for (i in 1:n){
     for (j in i:n){
-      i_to_j = M[i,j] 
-      j_to_i = M[j,i]
       if (i != j) {
-        outcome = 1
-        if (M[i,j] & ! M[j,i]) {
+        if (is.na(M[i,j]) | is.na(M[j,i])) {
+          outcome = NA
+        } else if (!M[i,j] & !M[j,i]) {
+          outcome = 1
+        } else if (M[i,j] & !M[j,i]) {
           outcome = 2
         } else if (!M[i,j] & M[j,i]) {
           outcome = 3
         } else if (M[i,j] & M[j,i]) {
-          outcome =4
+          outcome = 4
         }
         y <- c(y, outcome)
       }
@@ -74,10 +75,10 @@ matrix_to_dyads_1d <- function(M){
   return(y)
 }
 
-get_pair_names <- function(outcome) {
+get_pair_names <- function(outcome, sep = ":") {
     t = length(outcome)
     pairs <- get_dyads(t)
-    lapply(pairs, function(x) paste0(outcome[x[1]],":", outcome[x[2]]))
+    lapply(pairs, function(x) paste0(outcome[x[1]],sep,outcome[x[2]]))
 }
 
 # helper function to convert dyad-wise outcomes to adj matrix  outcomes
@@ -224,18 +225,91 @@ dyads_to_matrix_nd <- function(y_nd, t, n){
 #   }
 #   return(matrices)
 # }
-dyads_to_matrix_list <- function(dyad_df, n, t, network_type = "adj") {
+dyads_to_matrix_list <- function(dyad_df, n, t, dep_lab, network_type) {
   B <- nrow(dyad_df)
-  matrices <- list()
+  matrices <- vector("list", length = t) #a list with t elements representing t layers of the network
+  names(matrices) <- dep_lab
   for (i in 1:B) {
     res <- dyads_to_matrix_nd(dyad_df[i,], t, n)
-    if (network_type == "igraph") {
-      matrices[[i]] <- lapply(res, igraph::graph_from_adjacency_matrix)
-    } else if (network_type == "network") {
-      matrices[[i]] <- lapply(res, network::network, directed=T)
-    } else if(network_type == "adj") {
-      matrices[[i]] <- res      
-    }
+    names(res) <- dep_lab
+    for (layer in dep_lab) {
+      matrices[[layer]][[i]] <- res[[layer]]
+    }    
   }
   return(matrices)
+}
+
+
+#' ifelse_helper Function
+#'
+#' This function is a helper function that mimics the behavior of the `ifelse` function in R.
+#' It takes a logical condition `x` and returns `yes` if the condition is TRUE, and `no` otherwise.
+#'
+#' @param x A logical condition.
+#' @param yes The value to return if the condition is TRUE.
+#' @param no The value to return if the condition is FALSE.
+#'
+#' @return The value of `yes` if the condition is TRUE, and the value of `no` otherwise.
+#' @export
+ifelse_helper <- function(x, yes, no) {
+  if (x) {
+    return(yes)
+  } else {
+    return(no)
+  }
+}
+
+dimension_check <- function(x) {
+  n = ncol(x[[1]])
+  dim_check = sapply(x, function(a) is.matrix(a) & nrow(a) == ncol(a) & nrow(a) == n)
+  if (any(!dim_check) ) {
+    print("Dimension check failed")
+    return(FALSE)
+  } else {
+    return(TRUE)
+  }
+}
+
+binary_check <- function(x) {
+  bi_check = sapply(x, function(a) all(a == 0 | a == 1| is.na(a)))
+    if (any(!bi_check)) {
+      print("Dependent networks are not binary.")
+      return(FALSE)
+    } else {
+      return(TRUE)
+    }
+}
+
+na_check <- function(x) {
+  na_check = sapply(x, function(a) sum(is.na(a)) == 0)
+  if (any(!na_check)) {
+    print("Covariates contain missing values.")
+    return(FALSE)
+  } else {
+    return(TRUE)
+  }
+}
+
+#type: "dep_net", "dyad_covar", "actor_covar"
+is_valid <- function(x, type) {
+  if (type == "dep_net") {
+    if (!is.list(x)) {
+      print("Not a list")
+      return(FALSE)
+    }
+    return(dimension_check(x) & binary_check(x))
+
+  } else if (type == "dyad_covar") {
+    if (!is.list(x)) {
+      print("Not a list")
+      return(FALSE)
+    }
+    return(dimension_check(x) & na_check(x))
+  } else if (type == "actor_covar") {
+    if (!is.data.frame(x)) {
+      print("Not a data frame")
+      return(FALSE)
+    }
+    return(na_check(x))
+  }
 }
