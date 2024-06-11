@@ -27,6 +27,7 @@ You can install the development version of multiplexP2 from [GitHub](https://git
 ``` r
 # install.packages("devtools")
 devtools::install_github("annihong/multiplexP2")
+
 ```
 
 ## Example
@@ -45,17 +46,22 @@ dep_net <- networks[c("network1", "network2")]
 dyad_covar <- networks[c("network_covariate1", "network_covariate2")]
 actor_covar <- actor_data[c("actor_attr1", "actor_attr2")]
 m_empty <- Mp2Model(dep_net, dyad_covar = dyad_covar, actor_covar = actor_data)
-m_empty_res <- fit(m_empty, iter=10, prior_sim=TRUE)
+m_empty_res <- fit(m_empty, iter=10, prior_sim=F)
+
+# m <- add_covar(m, "network_covariate2", "density",layer_lab = "network1")
+# m <- add_covar(m,  "network_covariate2", "density",  layer_lab = "network1")
+# m <- add_covar(m,  "network_covariate2", "reciprocity")
+# m <- add_covar(m,  "network_covariate1", "cross_density")
+# #m <- add_covar(m,  "actor_attr2", "cross_density")
+# m <- add_covar(m,  "actor_attr2", "receiver")
 m <- m_empty
-m <- add_covar(m, "network_covariate2", "density",layer_lab = "network1")
-m <- add_covar(m,  "network_covariate2", "density",  layer_lab = "network1")
-m <- add_covar(m,  "network_covariate2", "reciprocity")
-m <- add_covar(m,  "network_covariate1", "cross_density")
-#m <- add_covar(m,  "actor_attr2", "cross_density")
-m <- add_covar(m,  "actor_attr2", "receiver")
+m <- update_covar(m, layer_1 = "network1", density = c("network_covariate2", "network_covariate1"), reciprocity = c("network_covariate2"), receiver = "actor_attr2")
+m <- update_covar(m, layer_1 = "network2", density = c("network_covariate2", "network_covariate1"), reciprocity = "network_covariate2", sender = "actor_attr1")
+m <- update_covar(m, layer_1 = "network1", layer_2 = "network2", cross_density = c("network_covariate2", "network_covariate1"), cross_reciprocity = "network_covariate2", sender = "actor_attr1")
 
 m2_fit <- fit(m, iter=10)
 m2_fit <- update_prior(model_obj=m2_fit, param="reciprocity", type="baseline", layer_lab=NULL, covar_lab=NULL, mean=99, sd=99, eta=NULL, alpha=NULL, beta=NULL)
+m2_fit <- update_prior(model_obj=m2_fit, param="reciprocity", type="covariate", layer_lab="network1", covar_lab="network_covariate2", mean=99, sd=99, eta=NULL, alpha=NULL, beta=NULL)
 m2_fit <- fit(m2_fit, iter=100, prior_sim=TRUE)
 summary(m2_fit)
 
