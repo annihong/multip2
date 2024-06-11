@@ -8,7 +8,8 @@
 #' @examples
 #' # TODO: Add examples of usage
 #' @export
-descriptive_stats <- function(network){
+descriptive_stats_prior <- function(X){
+    network <- igraph::graph_from_adjacency_matrix(X)
     mu <- igraph::edge_density(network)
     rho <- igraph::reciprocity(network)
     transitivity <- igraph::transitivity(network)
@@ -31,30 +32,35 @@ descriptive_stats <- function(network){
 #' @examples
 #' # TODO: Add examples of usage
 #' @export
-# simulated_network_checks <- function(simulated_networks, descriptive_stats_func = descriptive_stats, stats_lab = c("density", "reciprocity", "transitivity")) {
-#     final_res <- list()
-#     for (i in 1:length(simulated_networks)) {
-#         uniplex_net = ifelse_helper(is.list(simulated_networks[[i]]), simulated_networks[[i]], list(simulated_networks[[i]]))
-#         networks <- lapply(uniplex_net, igraph::graph_from_adjacency_matrix)
-#         res <- lapply(networks,descriptive_stats_func)
-#         res <- do.call(rbind, res)
-#         final_res[[i]] <- res
-#     }
-#     final_res <- do.call(rbind, final_res)
-#     final_res[is.nan(final_res)] <- 0
-#     colnames(final_res) <- stats_lab
-#     long <- as.data.frame(reshape2::melt(final_res)[,2:3])
-#     colnames(long) <- c("key", "val")
-
-#     p <- ggplot(long, aes(x = val)) +
-#         geom_histogram() +
-#         facet_grid(.~key) +
-#         aes(y=after_stat(count)/sum(after_stat(count))) +
-#         #ylim(0, 0.75) +
-#         labs(title = "", x = "", y = "")+
-#         theme_bw() 
-#     return(p)
-# }
+prior_simulated_network_checks <- function(simulated_networks, descriptive_stats_func = descriptive_stats_prior, stats_lab = c("density", "reciprocity", "transitivity")) {
+    plots <- list()
+    for (layer_lab in names(simulated_networks)) {
+        print(layer_lab)
+        uniplex_net <- simulated_networks[[layer_lab]]
+        final_res <- list()
+        for (uniplex_net in uniplex_nets) {
+            res <- descriptive_stats_func(uniplex_net)
+            final_res <- append(final_res, list(res))
+        }
+        final_res <- do.call(rbind, final_res)
+        final_res[is.na(final_res)] <- 0
+        colnames(final_res) <- stats_lab
+        long <- as.data.frame(reshape2::melt(final_res)[,2:3])
+        colnames(long) <- c("key", "val")
+        dev.new()
+        p <- ggplot(long, aes(x = val)) +
+            geom_histogram() +
+            facet_grid(.~key) +
+            aes(y=after_stat(count)/sum(after_stat(count))) +
+            #ylim(0, 0.75) +
+            labs(title = layer_lab, x = "", y = "")+
+            theme_bw() 
+        plots <- append(plots, list(p))
+        }
+        do.call(gridExtra::grid.arrange, plots)
+       
+    
+}
 
 degree_distribution <- function(x, by_axis, levels, cumulative) {
     a <- apply(x, by_axis, sum)
@@ -194,6 +200,23 @@ triad_census <- function (single_net, levels = 1:16) {
   return(tc[levels])
 }
 
+#' multiplex_gof_baseline
+#'
+#' This function compares the observed and simulated basic multiplex statistics using boxplots and scatter plots.
+#'
+#' @param dep_net The observed multiplex network.
+#' @param sim_nets A list of simulated multiplex networks.
+#' @param network_statistics A list of network statistics to compute for each network.
+#' @param return_data A logical value indicating whether to return the computed statistics.
+#' @param descriptive_labels Optional labels for the x-axis of the plot.
+#'
+#' @return If return_data is TRUE, a list containing the computed statistics for the simulated and observed networks.
+#'         If return_data is FALSE, a ggplot object representing the comparison plot.
+#'
+#' @export
+multiplex_gof_baseline <- function(dep_net, sim_nets, network_statistics, return_data, descriptive_labels=NULL...){
+    # Function implementation
+}
 multiplex_gof_baseline <- function(dep_net, sim_nets, network_statistics, return_data, descriptive_labels=NULL...){
     dep_lab <- names(dep_net)
     observed_stats <- as.data.frame(descriptive_stats(dep_net))
@@ -258,6 +281,33 @@ simulated_network_checks_single_layer <- function(sim_nets, dep_net, layer_lab, 
 
 
 
+#' simulated_network_checks Function
+#'
+#' This function performs predictive checks on a fitted model using simulated networks.
+#'
+#' @param model_obj The fitted model object.
+#' @param network_statistics The network statistics function to be used for the checks.
+#' @param num_sim The number of simulated networks to generate.
+#' @param layer_lab The labels of the network layers to be used. If NULL, all network layers are used.
+#' @param cumulative Logical indicating whether to calculate cumulative statistics.
+#' @param return_data Logical indicating whether to return the simulated network statistics.
+#' @param center Logical indicating whether to center the statistics.
+#' @param scale Logical indicating whether to scale the statistics.
+#' @param violin Logical indicating whether to plot the statistics using violin plots.
+#' @param key The key for the violin plots.
+#' @param perc The percentile for the key.
+#' @param position The position of the key.
+#' @param fontsize The font size of the plot.
+#' @param ... Additional arguments to be passed to the network statistics function.
+#'
+#' @return If return_data is TRUE, a list of simulated network statistics is returned.
+#'         Otherwise, the function plots the simulated network statistics.
+#'
+#' @details This function checks the goodness-of-fit of a fitted model by comparing the observed network statistics
+#'          with the statistics calculated from the simulated networks. It supports both multiplex statistics and
+#'          single layer statistics.
+#'
+#' @export
 simulated_network_checks <- function(model_obj, network_statistics, num_sim, layer_lab=NULL, cumulative=TRUE, return_data = FALSE, center=FALSE, scale=FALSE, violin=TRUE, key=NULL, perc=.05, position=4, fontsize=12, ...){
     network_statistics_func <- match.fun(network_statistics)
     multiplex_gof_stats <- c("multiplex_gof_baseline", "multiplex_gof_random")
