@@ -5,9 +5,9 @@
 \title{simulated_network_checks Function}
 \usage{
 simulated_network_checks(
+  sim_nets,
   model_obj,
   network_statistics,
-  num_sim,
   layer_lab = NULL,
   cumulative = TRUE,
   return_data = FALSE,
@@ -25,8 +25,6 @@ simulated_network_checks(
 \item{model_obj}{The fitted model object.}
 
 \item{network_statistics}{The network statistics function to be used for the checks.}
-
-\item{num_sim}{The number of simulated networks to generate.}
 
 \item{layer_lab}{The labels of the network layers to be used. If NULL, all network layers are used.}
 
@@ -49,6 +47,8 @@ simulated_network_checks(
 \item{fontsize}{The font size of the plot.}
 
 \item{...}{Additional arguments to be passed to the network statistics function.}
+
+\item{num_sim}{The number of simulated networks to generate.}
 }
 \value{
 If return_data is TRUE, a list of simulated network statistics is returned.

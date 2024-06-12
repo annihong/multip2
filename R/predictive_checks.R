@@ -307,14 +307,14 @@ simulated_network_checks_single_layer <- function(sim_nets, dep_net, layer_lab, 
 #'          single layer statistics.
 #'
 #' @export
-simulated_network_checks <- function(model_obj, network_statistics, num_sim, layer_lab=NULL, cumulative=TRUE, return_data = FALSE, center=FALSE, scale=FALSE, violin=TRUE, key=NULL, perc=.05, position=4, fontsize=12, ...){
+simulated_network_checks <- function(sim_nets, model_obj, network_statistics, layer_lab=NULL, cumulative=TRUE, return_data = FALSE, center=FALSE, scale=FALSE, violin=TRUE, key=NULL, perc=.05, position=4, fontsize=12, ...){
+    res_plots <- list()
     network_statistics_func <- match.fun(network_statistics)
     multiplex_gof_stats <- c("multiplex_gof_baseline", "multiplex_gof_random")
     if (is.null(model_obj$fit_res$stan_fit)) {
         stop("The model is not yet fitted, please fit the model first.")
     }
 
-    sim_nets <- extract_network_draws(model_obj, num_sim)
     if (is.null(layer_lab)) { #use all network layers
         layer_lab <- model_obj$dep_lab
     }
@@ -341,9 +341,10 @@ simulated_network_checks <- function(model_obj, network_statistics, num_sim, lay
             return(sim_stat_res)
         } else {
             for (net_lab in layer_lab) {
-                dev.new()
-                print(gof_plot(sim_stat_res, net_lab, center=center, scale=scale, violin=violin, key=key, perc=perc, position=position, fontsize=fontsize, ...))
+                p <- gof_plot(sim_stat_res, net_lab, center=center, scale=scale, violin=violin, key=key, perc=perc, position=position, fontsize=fontsize, ...)
+                res_plots <- append(res_plots, list(p))
             }
+            do.call(gridExtra::grid.arrange, res_plots)
         }
     }
     
@@ -552,11 +553,13 @@ gof_plot <- function (sim_stat_res, net_lab, center=FALSE, scale=FALSE, violin=T
 			panel.text(xAxis, obs[i,], labels=obsLabels[i,], pos=position)
 		}
 	}
-    dev.new()
-	bwplot(as.numeric(sims)~rep(xAxis, each=itns), horizontal=FALSE,
+
+	p <- bwplot(as.numeric(sims)~rep(xAxis, each=itns), horizontal=FALSE,
 			panel = panelFunction, xlab=xlabel, ylab=ylabel, ylim=c(ymin,ymax),
 			scales=list(x=list(labels=key), y=list(draw=FALSE)),
 			main=main)
+    
+    return(p)
 }
 
 
