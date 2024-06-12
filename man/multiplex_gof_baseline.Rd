@@ -7,9 +7,8 @@
 multiplex_gof_baseline(
   dep_net,
   sim_nets,
-  network_statistics,
-  return_data,
-  descriptive_labels = NULL...
+  return_data = FALSE,
+  descriptive_labels = NULL
 )
 }
 \arguments{
@@ -17,11 +16,11 @@ multiplex_gof_baseline(
 
 \item{sim_nets}{A list of simulated multiplex networks.}
 
-\item{network_statistics}{A list of network statistics to compute for each network.}
-
 \item{return_data}{A logical value indicating whether to return the computed statistics.}
 
 \item{descriptive_labels}{Optional labels for the x-axis of the plot.}
+
+\item{network_statistics}{A list of network statistics to compute for each network.}
 }
 \value{
 If return_data is TRUE, a list containing the computed statistics for the simulated and observed networks.

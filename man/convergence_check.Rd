@@ -5,7 +5,7 @@
 \title{Check convergence of a multiplex network model}
 \usage{
 convergence_check(
-  multip2fit,
+  model.obj,
   params,
   custom_params = "",
   plot = c("traceplot", "running", "geweke", "density"),
@@ -14,7 +14,7 @@ convergence_check(
 )
 }
 \arguments{
-\item{multip2fit}{the fitted MultiP2Fit object.}
+\item{model.obj}{a Mp2Model object}
 
 \item{params}{A character string indicating which parameters to plot. Must be one of "fixed" (all the fixed parameters), "random"(actor random effects), or "custom" (use the custom_params argument)}
 

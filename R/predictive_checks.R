@@ -84,7 +84,7 @@ degree_distribution <- function(x, by_axis, levels, cumulative) {
 #'
 #' @return The outdegree distribution of the single network.
 #' @export
-outdegree_distribution <- function(single_net, levels=0:8, cumulative=TRUE) {
+Outdegree_distribution <- function(single_net, levels=0:8, cumulative=TRUE) {
     return(degree_distribution(single_net, 1, levels, cumulative))
 }
 #' Calculate the indegree distribution of a single network
@@ -98,7 +98,7 @@ outdegree_distribution <- function(single_net, levels=0:8, cumulative=TRUE) {
 #'
 #' @return The indegree distribution of the single network.
 #' @export
-indegree_distribution <- function(single_net, levels=0:8, cumulative=TRUE) {
+Indegree_distribution <- function(single_net, levels=0:8, cumulative=TRUE) {
     return(degree_distribution(single_net, 2, levels, cumulative))
 }
 
@@ -112,7 +112,7 @@ indegree_distribution <- function(single_net, levels=0:8, cumulative=TRUE) {
 #'
 #' @return A vector containing the counts of each triad type specified by the levels parameter.
 #' @export
-triad_census <- function (single_net, levels = 1:16) {
+Triad_census <- function (single_net, levels = 1:16) {
   # get matrix and prepare data
   mat <- single_net
   N <- nrow(mat)
