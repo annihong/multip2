@@ -216,7 +216,7 @@ triad_census <- function (single_net, levels = 1:16) {
 multiplex_gof_baseline <- function(dep_net, sim_nets, network_statistics, return_data, descriptive_labels=NULL...){
     # Function implementation
 }
-multiplex_gof_baseline <- function(dep_net, sim_nets, network_statistics, return_data, descriptive_labels=NULL...){
+multiplex_gof_baseline <- function(dep_net, sim_nets, return_data = FALSE, descriptive_labels=NULL){
     dep_lab <- names(dep_net)
     observed_stats <- as.data.frame(descriptive_stats(dep_net))
     observed_stats_df <- data.frame("var" = rownames(observed_stats), "sim_stats" = observed_stats[,1])
