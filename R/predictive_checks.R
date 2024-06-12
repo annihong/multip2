@@ -552,6 +552,7 @@ gof_plot <- function (sim_stat_res, net_lab, center=FALSE, scale=FALSE, violin=T
 			panel.text(xAxis, obs[i,], labels=obsLabels[i,], pos=position)
 		}
 	}
+    dev.new()
 	bwplot(as.numeric(sims)~rep(xAxis, each=itns), horizontal=FALSE,
 			panel = panelFunction, xlab=xlabel, ylab=ylabel, ylim=c(ymin,ymax),
 			scales=list(x=list(labels=key), y=list(draw=FALSE)),
