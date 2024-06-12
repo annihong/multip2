@@ -1,4 +1,4 @@
-  matrix[N,K] x_beta;
+
   // start of the x_beta calculation
   
   {
@@ -92,5 +92,4 @@
       }
     }
   }
-
   // end of the x_beta calculation

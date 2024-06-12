@@ -114,6 +114,7 @@ transformed parameters{
 }
 
 model {
+  matrix[N,K] x_beta;
   #include model_components/x_beta.stan
 
 
@@ -167,6 +168,7 @@ generated quantities{
   int y_tilde[N];
   cov_matrix[2*T] Sigma;
   Sigma = diag_pre_multiply(sigma, L_corr) * diag_pre_multiply(sigma, L_corr)';
+  matrix[N,K] x_beta;
   #include model_components/x_beta.stan
   for (k in 1:N) {
     y_tilde[k] = categorical_logit_rng(x_beta[k]');
