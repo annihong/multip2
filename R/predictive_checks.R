@@ -35,8 +35,7 @@ descriptive_stats_prior <- function(X){
 prior_simulated_network_checks <- function(simulated_networks, descriptive_stats_func = descriptive_stats_prior, stats_lab = c("density", "reciprocity", "transitivity")) {
     plots <- list()
     for (layer_lab in names(simulated_networks)) {
-        print(layer_lab)
-        uniplex_net <- simulated_networks[[layer_lab]]
+        uniplex_nets <- simulated_networks[[layer_lab]]
         final_res <- list()
         for (uniplex_net in uniplex_nets) {
             res <- descriptive_stats_func(uniplex_net)
