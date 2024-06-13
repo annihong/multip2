@@ -344,7 +344,7 @@ simulated_network_checks <- function(sim_nets, model_obj, network_statistics, la
                 p <- gof_plot(sim_stat_res, net_lab, center=center, scale=scale, violin=violin, key=key, perc=perc, position=position, fontsize=fontsize, ...)
                 res_plots <- append(res_plots, list(p))
             }
-            do.call(gridExtra::grid.arrange, res_plots)
+            return(res_plots)
         }
     }
     
