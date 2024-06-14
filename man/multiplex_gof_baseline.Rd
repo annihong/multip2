@@ -8,7 +8,8 @@ multiplex_gof_baseline(
   dep_net,
   sim_nets,
   return_data = FALSE,
-  descriptive_labels = NULL
+  descriptive_labels = NULL,
+  ...
 )
 }
 \arguments{

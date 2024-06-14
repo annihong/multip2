@@ -213,10 +213,7 @@ Triad_census <- function (single_net, levels = 1:16) {
 #'         If return_data is FALSE, a ggplot object representing the comparison plot.
 #'
 #' @export
-multiplex_gof_baseline <- function(dep_net, sim_nets, network_statistics, return_data, descriptive_labels=NULL...){
-    # Function implementation
-}
-multiplex_gof_baseline <- function(dep_net, sim_nets, return_data = FALSE, descriptive_labels=NULL){
+multiplex_gof_baseline <- function(dep_net, sim_nets, return_data = FALSE, descriptive_labels=NULL, ...){
     dep_lab <- names(dep_net)
     observed_stats <- as.data.frame(descriptive_stats(dep_net))
     observed_stats_df <- data.frame("var" = rownames(observed_stats), "sim_stats" = observed_stats[,1])
@@ -257,9 +254,49 @@ multiplex_gof_baseline <- function(dep_net, sim_nets, return_data = FALSE, descr
 
 }
 
-#TODO implement this function for flexible t networks
-multiplex_gof_random <- function(dep_net, sim_nets, network_statistics, return_data, descriptive_labels=NULL...){
-    stop("Not implemented yet")
+#Currently this only works for biplex (t = 2) networks
+multiplex_gof_random <- function(dep_net, sim_nets, return_data, descriptive_labels=NULL, ...){
+    # if (length(dep_net) != 2) {
+    #     stop("This function only works for biplex networks")
+    # }
+    dep_lab <- names(dep_net)
+    observed_stats <- as.data.frame(descriptive_stats_Sigma_t3(dep_net))
+    observed_stats_df <- data.frame("var" = rownames(observed_stats), "sim_stats" = observed_stats[,1])
+    sim_stats <- observed_stats
+    # post processing the generated results
+    num_sim <- length(sim_nets[[1]])
+    stats <- list()
+    for (i in 1:num_sim) {
+        net <- lapply(dep_lab, function(x) sim_nets[[x]][[i]])
+        names(net) <- dep_lab
+        stats[[i]] <- descriptive_stats_Sigma_t3(net)
+    }
+    stats <- data.frame(do.call(rbind, stats))
+    basic_stats <- tidyr::pivot_longer(data.frame(stats), everything(), names_to="var", values_to="sim_stats")
+    basic_stats$var <- factor(basic_stats$var, colnames(stats))
+    iswithin <- sapply(strsplit(colnames(stats), "_"), function(x) x[1] == x[4])
+    colors <- c("#219ebc", "#ffb703")
+    p4 <- ggplot(basic_stats,aes(x = var, y=sim_stats, fill=var),show.legend = FALSE) +
+    stat_boxplot(geom ='errorbar') +
+        geom_boxplot() +
+        scale_fill_manual(values=colors[iswithin + 1])+
+        geom_point(data=observed_stats_df, mapping = aes(var,sim_stats), shape = 21, colour = "black", fill = "white", size=3) +
+        theme_bw() + 
+        theme(
+        legend.position="none",
+        plot.title = element_text(size=11),
+        axis.text.y = element_text(size=15, color = "black"),
+        axis.text.x = element_text(size=15, color = "black")) +
+        #scale_x_discrete(labels= descriptive_labels) + 
+        xlab("") +ylab("") + coord_flip()
+        ggtitle("Descriptive Statistics Observed vs Simulated basic statistics") 
+
+
+    if (return_data) {
+        return(list(stat_sim = basic_stats, stat_obs = observed_stats))
+    } else {
+        return(p4)
+    }
 }
 
 simulated_network_checks_single_layer <- function(sim_nets, dep_net, layer_lab, network_statistics_func, cumulative=TRUE) {
@@ -307,31 +344,28 @@ simulated_network_checks_single_layer <- function(sim_nets, dep_net, layer_lab, 
 #'          single layer statistics.
 #'
 #' @export
-simulated_network_checks <- function(sim_nets, model_obj, network_statistics, layer_lab=NULL, cumulative=TRUE, return_data = FALSE, center=FALSE, scale=FALSE, violin=TRUE, key=NULL, perc=.05, position=4, fontsize=12, ...){
+simulated_network_checks <- function(sim_nets, dep_net, network_statistics, layer_lab=NULL, cumulative=TRUE, return_data = FALSE, center=FALSE, scale=FALSE, violin=TRUE, key=NULL, perc=.05, position=4, fontsize=12, ...){
+    print("Any missing value in the observed networks will be replaced with 0.")
+    dep_net <- lapply(dep_net, function(x) {x[is.na(x)] <- 0; return(x)}) #remove NA values
     res_plots <- list()
     network_statistics_func <- match.fun(network_statistics)
     multiplex_gof_stats <- c("multiplex_gof_baseline", "multiplex_gof_random")
-    if (is.null(model_obj$fit_res$stan_fit)) {
-        stop("The model is not yet fitted, please fit the model first.")
-    }
 
     if (is.null(layer_lab)) { #use all network layers
-        layer_lab <- model_obj$dep_lab
+        layer_lab <- names(dep_net)
     }
-
 
     if (network_statistics %in% multiplex_gof_stats) { #workflows for multiplex statistics
         if (!is.null(layer_lab)) {
             print("all layers are used for multiplex statistics")
         }
-        network_statistics_func(model_obj$data$dep_net, sim_nets, network_statistics=network_statistics, return_data=return_data, ...)
+        network_statistics_func(dep_net, sim_nets, return_data=return_data, ...)
 
     } else { #workflows for single layer statistics
         sim_stat_res <- vector("list", length(layer_lab))
         names(sim_stat_res) <- layer_lab
 
         for (layer in layer_lab) {
-            dep_net <- model_obj$data$dep_net
             sim_stat_res[[layer]] <- simulated_network_checks_single_layer(sim_nets, dep_net, layer, network_statistics_func, cumulative)
         }
         attr(sim_stat_res,"network_statistic_name") <- network_statistics
@@ -340,10 +374,12 @@ simulated_network_checks <- function(sim_nets, model_obj, network_statistics, la
         if (return_data) {
             return(sim_stat_res)
         } else {
+            res_plots = list()
             for (net_lab in layer_lab) {
                 p <- gof_plot(sim_stat_res, net_lab, center=center, scale=scale, violin=violin, key=key, perc=perc, position=position, fontsize=fontsize, ...)
-                res_plots <- append(res_plots, list(p))
+                res_plots[[net_lab]] <- p
             }
+            gridExtra::grid.arrange(grobs = res_plots, ncol = length(layer_lab))
             return(res_plots)
         }
     }

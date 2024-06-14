@@ -65,23 +65,6 @@ Mp2Model <- function(dep_net, dyad_covar=NULL, actor_covar=NULL, ...) {
 #' 
 #' @return The updated model object with the added covariate.
 #' @export
-# add_covar <- function(model_obj,...) {
-#   UseMethod("add_covar")
-# }
-
-#' Add covariates to the model
-#' 
-#' This function adds covariates to the model object. It supports different types of covariates, such as within-layer covariates and cross-layer covariates. The function checks the type of covariate and adds it to the appropriate section of the model object.
-#' 
-#' @param model_obj The model object to which the covariate will be added.
-#' @param covar_lab The label of the covariate.
-#' @param param The parameter associated with the covariate.
-#' @param layer_lab The label of the layer (for within-layer covariates) or pair (for cross-layer covariates) to which the covariate belongs. If not specified, the covariate will be added to all layers or pairs.
-#' @param mean_prior The mean prior for the covariate. If not specified, no prior will be used.
-#' @param sd_prior The standard deviation prior for the covariate. If not specified, no prior will be used.
-#' 
-#' @return The updated model object with the added covariate.
-#' @export
 # add_covar.Mp2Model <- function(model_obj, covar_lab, param, layer_lab=NULL, mean_prior=NULL, sd_prior=NULL,...) {
 #     create_covar <- function(var_name, t_or_h, is_within, value, mean_prior, sd_prior) {
 #         return(list(var_name=var_name, t_or_h=t_or_h, is_within=is_within, value=value, mean_prior=mean_prior, sd_prior=sd_prior))
@@ -303,7 +286,7 @@ fit.Mp2Model <- function(model_obj, chains = 4, iter = 200, warmup = floor(iter/
     options(mc.cores =mc.cores)
     rstan::rstan_options(auto_write = auto_write)
     
-    fpath <- system.file("stan", stan_file, package="multiplexP2")
+    fpath <- system.file("stan", stan_file, package="MultiP2")
     p2_fit <- rstan::stan(
                     file=fpath, 
                     data = stan_data,

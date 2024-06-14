@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/reference/test_package.html#special-files
 
 library(testthat)
-library(multiplexP2)
+library(MultiP2)
 
-test_check("multiplexP2")
+test_check("MultiP2")

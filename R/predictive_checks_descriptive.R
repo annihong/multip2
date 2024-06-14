@@ -64,9 +64,19 @@ descriptive_stats <- function(networks){
 }
 
 descriptive_stats_Sigma_t3 <- function(networks, names_net = names(networks)){
+  concat_strings <- function(x, y) {
+    paste(x, y, sep = "_X_")
+  }
+    networks <- lapply(networks, igraph::graph_from_adjacency_matrix)
     indegree <- lapply(networks, igraph::degree, mode = "in", normalized=F)
     outdegree <- lapply(networks, igraph::degree, mode = "out", normalized=F)
-    degrees <- c(outdegree[1], indegree[1], outdegree[2], indegree[2], outdegree[3], indegree[3])
+    degrees <-list()
+    for (i in 1:length(dep_net)) {
+      degrees <- append(degrees, outdegree[i])
+      degrees <- append(degrees, indegree[i])
+    }
+    # degrees <- c(outdegree[1], indegree[1], outdegree[2], indegree[2], outdegree[3], indegree[3])
+    # #degrees <- c(outdegree[1], indegree[1], outdegree[2], indegree[2])
     var_names <- paste(rep(names_net, each = 2), c("od", "id"), sep = "_")
     max_length <- max(sapply(degrees, length))
     degrees <- do.call(cbind, lapply(degrees, function(x) c(x, rep(0,max_length - length(x)))))
@@ -75,5 +85,6 @@ descriptive_stats_Sigma_t3 <- function(networks, names_net = names(networks)){
     res = covariance[keep]
     var_names  <- outer(var_names, var_names, concat_strings)[keep]
     names(res) <- var_names
+    
     return(res)
 }

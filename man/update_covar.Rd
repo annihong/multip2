@@ -31,8 +31,6 @@ update_covar(
 }
 \value{
 The updated model object with the added covariate.
-
-The updated model object with the added covariate.
 }
 \description{
 This function adds covariates to the model object. It supports different types of covariates, such as within-layer covariates and cross-layer covariates. The function checks the type of covariate and adds it to the appropriate section of the model object.

@@ -1,4 +1,4 @@
-Package: multiplexP2
+Package: MultiP2
 Title: Bayesian Multiplex Mixed-effects Network Model
 Version: 0.0.0.9000
 Authors@R: 
@@ -12,8 +12,8 @@ RoxygenNote: 7.2.3
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
-URL: https://github.com/annihong/multiplexP2
-BugReports: https://github.com/annihong/multiplexP2/issues
+URL: https://github.com/annihong/MultiP2
+BugReports: https://github.com/annihong/MultiP2/issues
 Imports: 
     abind,
     ggmcmc,

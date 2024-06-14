@@ -292,6 +292,11 @@ na_check <- function(x) {
 
 #type: "dep_net", "dyad_covar", "actor_covar"
 is_valid <- function(x, type) {
+  all_numeric <- sapply(x, function(a) is.numeric(a))
+  if (any(!all_numeric)) {
+    print("Not all elements are numeric")
+    return(FALSE)
+  }
   if (type == "dep_net") {
     if (!is.list(x)) {
       print("Not a list")

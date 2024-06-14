@@ -13,20 +13,20 @@ knitr::opts_chunk$set(
 )
 ```
 
-# multiplexP2
+# MultiP2
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of multiplexP2 is to ...
+The goal of MultiP2 is to ...
 
 ## Installation
 
-You can install the development version of multiplexP2 from [GitHub](https://github.com/) with:
+You can install the development version of MultiP2 from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("annihong/multiplexP2")
+devtools::install_github("annihong/MultiP2")
 
 ```
 
@@ -35,7 +35,7 @@ devtools::install_github("annihong/multiplexP2")
 This is a basic example which shows you how to solve a common problem:
 
 ```{r example, eval=FALSE}
-library(multiplexP2)
+library(MultiP2)
 #networks = replicate(4, matrix(data=sample(c(0,1), 9, replace=TRUE), nrow=3), simplify = FALSE)
 n = 5
 networks = replicate(4, matrix(data=sample(c(0,1), n^2, replace=TRUE, prob=c(0.7,0.3)), nrow=n), simplify = FALSE) #self loops are ignored
