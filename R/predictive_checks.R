@@ -379,8 +379,8 @@ simulated_network_checks <- function(sim_nets, dep_net, network_statistics, laye
                 p <- gof_plot(sim_stat_res, net_lab, center=center, scale=scale, violin=violin, key=key, perc=perc, position=position, fontsize=fontsize, ...)
                 res_plots[[net_lab]] <- p
             }
-            gridExtra::grid.arrange(grobs = res_plots, ncol = length(layer_lab))
-            return(res_plots)
+            p <- gridExtra::grid.arrange(grobs = res_plots, ncol = length(layer_lab))
+            return(p)
         }
     }
     

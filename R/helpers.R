@@ -292,9 +292,9 @@ na_check <- function(x) {
 
 #type: "dep_net", "dyad_covar", "actor_covar"
 is_valid <- function(x, type) {
-  all_numeric <- sapply(x, function(a) is.numeric(a))
+  all_numeric <- sapply(x, function(a) is.numeric(a) | is.logical(a))
   if (any(!all_numeric)) {
-    print("Not all elements are numeric")
+    print("Not all elements are numeric/logical.")
     return(FALSE)
   }
   if (type == "dep_net") {
