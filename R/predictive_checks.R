@@ -258,6 +258,7 @@ multiplex_gof_baseline <- function(dep_net, sim_nets, return_data = FALSE, descr
 }
 
 #Currently this only works for biplex (t = 2) networks
+#' @export
 multiplex_gof_random <- function(dep_net, sim_nets, return_data, descriptive_labels=NULL, ...){
     # if (length(dep_net) != 2) {
     #     stop("This function only works for biplex networks")
