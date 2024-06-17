@@ -88,8 +88,6 @@ update_covar <- function(model_obj, layer_1, layer_2=NULL, density=NULL, recipro
     } else { # cross-layer covariates
         layer_1_idx = which(model_obj$dep_lab == layer_1)
         layer_2_idx = which(model_obj$dep_lab == layer_2)
-        print(layer_1_idx)
-        print(layer_2_idx)
         if (layer_1_idx < layer_2_idx) {
             pair_lab = paste(layer_1, layer_2, sep=":")
             idx_seq = which(model_obj$pair_lab == pair_lab)
@@ -336,6 +334,15 @@ summary.Mp2Model <- function(model_obj, ...) {
 }
 
 
+#' Print Mp2Model Object
+#'
+#' This function prints information about an Mp2Model object.
+#'
+#' @param model_obj An Mp2Model object.
+#' @param ... Additional arguments to be passed to the print function.
+#'
+#' @return None
+#'
 #' @export
 print.Mp2Model <- function(model_obj, ...) {
     cat("The dependent multiplex network layers are ", paste(model_obj$dep_lab, sep=","), "\n")
