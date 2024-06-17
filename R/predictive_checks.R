@@ -1,13 +1,13 @@
-#' Calculate descriptive statistics for a network
+#' Calculate network descriptive statistics for a given adjacency matrix
 #'
-#' This function calculates the edge density, reciprocity, and transitivity of a network.
+#' This function takes an adjacency matrix as input and calculates three descriptive statistics:
+#' - Edge density: the proportion of possible edges that are present in the network
+#' - Reciprocity: the proportion of edges that are reciprocated (i.e., both nodes are connected to each other)
+#' - Transitivity: the proportion of triangles in the network (i.e., the tendency for nodes to form clusters)
 #'
-#' @param network An igraph object representing the network.
-#' @return A numeric vector of length 3. The first element is the edge density, the second element is the reciprocity, and the third element is the transitivity.
-#' @importFrom igraph edge_density reciprocity transitivity
-#' @examples
-#' # TODO: Add examples of usage
-#' @export
+#' @param X An adjacency matrix representing a network
+#' @return A numeric vector containing the calculated descriptive statistics
+#' @import igraph
 descriptive_stats_prior <- function(X){
     network <- igraph::graph_from_adjacency_matrix(X)
     mu <- igraph::edge_density(network)
@@ -17,20 +17,23 @@ descriptive_stats_prior <- function(X){
     return(res)
 }
 
-#' Perform checks on simulated networks
+#' prior_simulated_network_checks
 #'
-#' This function takes a list of simulated networks, calculates descriptive statistics for each network,
-#' and returns a ggplot2 object of histograms of these statistics.
+#' This function performs predictive checks on simulated networks.
 #'
-#' @param simulated_networks A list of simulated networks. Each element of the list should be an list of adjacency matrix (a multiplex network).
-#' @param descriptive_stats A function that calculates descriptive statistics for a network. This function should take an igraph object as input and return a numeric vector of statistics.
-#' @param stats_lab A character vector of labels for the statistics calculated by `descriptive_stats`. The default is `c("density", "reciprocity", "transitivity")`.
-#' @return A ggplot2 object. This plot shows histograms of the calculated statistics for the simulated networks.
-#' @import ggplot2
-#' @importFrom igraph graph_from_adjacency_matrix
-#' @importFrom reshape2 melt
+#' @param simulated_networks A list of simulated networks.
+#' @param descriptive_stats_func The function used to calculate descriptive statistics for each network, default is descriptive_stats_prior (calculates density, reciprocity, and transitivity).
+#' @param stats_lab A character vector specifying the labels for the descriptive statistics.
+#' @details This function iterates over each layer of simulated networks and calculates descriptive statistics for each uniplex network.
+#' It then plots histograms of the descriptive statistics for each layer and displays them using grid.arrange.
+#' The function also allows customization of the descriptive statistics function and the labels for the statistics.
+#'
 #' @examples
-#' # TODO: Add examples of usage
+#' #prior_simulated_network_checks(simulated_networks, descriptive_stats_func = descriptive_stats_prior, stats_lab = c("density", "reciprocity", "transitivity"))
+#'
+#' @importFrom ggplot2 ggplot geom_histogram facet_grid labs theme_bw
+#' @importFrom reshape2 melt
+#' @importFrom gridExtra grid.arrange
 #' @export
 prior_simulated_network_checks <- function(simulated_networks, descriptive_stats_func = descriptive_stats_prior, stats_lab = c("density", "reciprocity", "transitivity")) {
     plots <- list()

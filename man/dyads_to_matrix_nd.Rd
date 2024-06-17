@@ -20,7 +20,3 @@ A list of \code{t} adjacency matrices.
 Given a vector \code{y_nd} in {1,...,2^(2*t)}^N, total number of networks \code{t}, and number of actors \code{n},
 this function returns a list of \code{t} networks in adjacency matrix form.
 }
-\examples{
-# replace with a valid example
-
-}

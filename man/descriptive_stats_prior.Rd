@@ -2,19 +2,21 @@
 % Please edit documentation in R/predictive_checks.R
 \name{descriptive_stats_prior}
 \alias{descriptive_stats_prior}
-\title{Calculate descriptive statistics for a network}
+\title{Calculate network descriptive statistics for a given adjacency matrix}
 \usage{
 descriptive_stats_prior(X)
 }
 \arguments{
-\item{network}{An igraph object representing the network.}
+\item{X}{An adjacency matrix representing a network}
 }
 \value{
-A numeric vector of length 3. The first element is the edge density, the second element is the reciprocity, and the third element is the transitivity.
+A numeric vector containing the calculated descriptive statistics
 }
 \description{
-This function calculates the edge density, reciprocity, and transitivity of a network.
+This function takes an adjacency matrix as input and calculates three descriptive statistics:
+\itemize{
+\item Edge density: the proportion of possible edges that are present in the network
+\item Reciprocity: the proportion of edges that are reciprocated (i.e., both nodes are connected to each other)
+\item Transitivity: the proportion of triangles in the network (i.e., the tendency for nodes to form clusters)
 }
-\examples{
-# TODO: Add examples of usage
 }

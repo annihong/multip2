@@ -2,7 +2,7 @@
 % Please edit documentation in R/predictive_checks.R
 \name{prior_simulated_network_checks}
 \alias{prior_simulated_network_checks}
-\title{Perform checks on simulated networks}
+\title{prior_simulated_network_checks}
 \usage{
 prior_simulated_network_checks(
   simulated_networks,
@@ -11,19 +11,21 @@ prior_simulated_network_checks(
 )
 }
 \arguments{
-\item{simulated_networks}{A list of simulated networks. Each element of the list should be an list of adjacency matrix (a multiplex network).}
+\item{simulated_networks}{A list of simulated networks.}
 
-\item{stats_lab}{A character vector of labels for the statistics calculated by \code{descriptive_stats}. The default is \code{c("density", "reciprocity", "transitivity")}.}
+\item{descriptive_stats_func}{The function used to calculate descriptive statistics for each network, default is descriptive_stats_prior (calculates density, reciprocity, and transitivity).}
 
-\item{descriptive_stats}{A function that calculates descriptive statistics for a network. This function should take an igraph object as input and return a numeric vector of statistics.}
-}
-\value{
-A ggplot2 object. This plot shows histograms of the calculated statistics for the simulated networks.
+\item{stats_lab}{A character vector specifying the labels for the descriptive statistics.}
 }
 \description{
-This function takes a list of simulated networks, calculates descriptive statistics for each network,
-and returns a ggplot2 object of histograms of these statistics.
+This function performs predictive checks on simulated networks.
+}
+\details{
+This function iterates over each layer of simulated networks and calculates descriptive statistics for each uniplex network.
+It then plots histograms of the descriptive statistics for each layer and displays them using grid.arrange.
+The function also allows customization of the descriptive statistics function and the labels for the statistics.
 }
 \examples{
-# TODO: Add examples of usage
+#prior_simulated_network_checks(simulated_networks, descriptive_stats_func = descriptive_stats_prior, stats_lab = c("density", "reciprocity", "transitivity"))
+
 }

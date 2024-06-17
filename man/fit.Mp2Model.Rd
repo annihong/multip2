@@ -2,7 +2,7 @@
 % Please edit documentation in R/classes.R
 \name{fit.Mp2Model}
 \alias{fit.Mp2Model}
-\title{fit function for "Mp2Model" class}
+\title{Fit Mp2Model}
 \usage{
 \method{fit}{Mp2Model}(
   model_obj,
@@ -11,18 +11,44 @@
   warmup = floor(iter/2),
   thin = 1,
   seed = sample.int(.Machine$integer.max, 1),
-  stan_file = "multiplex_p2_low_mem.stan",
   prior_sim = FALSE,
   mc.cores = parallel::detectCores(),
   auto_write = TRUE,
+  stan_file = "multiplex_p2_low_mem.stan",
   ...
 )
 }
 \arguments{
-\item{model_obj}{An object of class "Mp2Model"}
+\item{model_obj}{The Mp2Model object.}
 
-\item{...}{Other arguments passed to or from other methods}
+\item{chains}{The number of chains to run in parallel (default: 4), see rstan::stan() documentation for more details.}
+
+\item{iter}{The total number of iterations (default: 200), see rstan::stan() documentation for more details.}
+
+\item{warmup}{The number of warmup iterations (default: floor(iter/2)), see rstan::stan() documentation for more details.}
+
+\item{thin}{The thinning interval (default: 1), see rstan::stan() documentation for more details.}
+
+\item{seed}{The random seed (default: a random integer), see rstan::stan() documentation for more details.}
+
+\item{prior_sim}{Whether to simulate from the prior distribution (default: FALSE).}
+
+\item{mc.cores}{The number of CPU cores to use for parallel computing (default: all available cores by calling parallel::detectCores()), see rstan::stan() documentation for more details.}
+
+\item{auto_write}{Whether to automatically write compiled Stan models to disk (default: TRUE), see rstan::stan() documentation for more details.}
+
+\item{stan_file}{The name of the Stan file (default: "multiplex_p2_low_mem.stan").}
+
+\item{...}{Additional arguments passed to rstan::stan(), see rstan::stan() documentation for more details.}
+}
+\value{
+The updated Mp2Model object with fit results.
 }
 \description{
-fit function for "Mp2Model" class
+This function fits the Mp2Model using Stan.
+}
+\examples{
+#model <- Mp2Model(...)
+#model <- fit(model)
+#summary(model)
 }

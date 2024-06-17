@@ -1,27 +1,18 @@
 
 
-#' Format covariates data for stan estimation
-#' 
-#' @param outcome A character vector of the names of the layers of networks in the network_data as the outcome multiplex network
-#' @param network_data list of p + t matrices of dim n x n : network outcomes and network covariates, p is the number of network covariates and t is the number of layers in the multiplex network outcome. 
-#' @param actor_data n x p data frame: p covariates of length of the number of actors (n) 
-#' @return a Mp2Model object 
-#' @param senders_covar A character vector indicating the names of the covariates to include for the senders.
-#' @param receivers_covar A character vector indicating the names of the covariates to include for the receivers.
-#' @param density_covar A character vector indicating the names of the covariates to include for the density.
-#' @param reciprocity_covar A character vector indicating the names of the covariates to include for the reciprocity.
-#' @param cross_density_covar A character vector indicating the names of the covariates to include for the cross-layer density.
-#' @param cross_reciprocity_covar A character vector indicating the names of the covariates to include for the cross-layer reciprocity.
-#' @param custom_covars A list of custom covariates to include in the model.
-#' @param chains An integer indicating the number of Markov chains to run.
-#' @param iter An integer indicating the number of iterations per chain.
-#' @param warmup An integer indicating the number of warmup iterations per chain.
-#' @param thin An integer indicating the thinning rate for the chains.
-#' @param seed An integer indicating the random seed for the chains.
-#' @param stan_file A character string indicating the name of the stan file to use, default is "multiplex_p2.stan".
-#' @return A list containing the fitted Stan model and parameter labels.
+#' Mp2Model function
+#'
+#' This function creates an empty model of the class Mp2Model.
+#'
+#' @param dep_net A named list of matrices representing the dependent multiplex network (outcome), values are binary or NA.
+#' @param dyad_covar A list of matrices representing the dyadic covariates (optional), logical or numeric, but not NA.
+#' @param actor_covar A data frame representing the actor covariates (optional), logical or numeric, but not NA.
+#' @return A new Mp2Model object representing the empty model.
+#' @details This function creates a default empty model for MultiP2 analysis. It takes in the dependent network, dyadic covariates, and actor covariates (optional) as input. The function checks the validity of the input arguments and returns a new Mp2Model object with the specified attributes.
+#' @examples
+#' #not run
+#' #model <- Mp2Model(dep_net, dyad_covar, actor_covar)
 #' @export
-#create a default empty model. 
 Mp2Model <- function(dep_net, dyad_covar=NULL, actor_covar=NULL, ...) {
     stopifnot(is_valid(dep_net, type = "dep_net"))
     if (!is.null(dyad_covar)) {
@@ -52,72 +43,23 @@ Mp2Model <- function(dep_net, dyad_covar=NULL, actor_covar=NULL, ...) {
     return(newMp2Model)
 }
 
-#' Add covariates to the model
-#' 
-#' This function adds covariates to the model object. It supports different types of covariates, such as within-layer covariates and cross-layer covariates. The function checks the type of covariate and adds it to the appropriate section of the model object.
-#' 
-#' @param model_obj The model object to which the covariate will be added.
-#' @param covar_lab The label of the covariate.
-#' @param param The parameter associated with the covariate.
-#' @param layer_lab The label of the layer (for within-layer covariates) or pair (for cross-layer covariates) to which the covariate belongs. If not specified, the covariate will be added to all layers or pairs.
-#' @param mean_prior The mean prior for the covariate. If not specified, no prior will be used.
-#' @param sd_prior The standard deviation prior for the covariate. If not specified, no prior will be used.
-#' 
-#' @return The updated model object with the added covariate.
+
+#' Update Covariate
+#'
+#' This function updates the covariates in a given model object based on the specified parameters.
+#'
+#' @param model_obj An object of the class Mp2Model to update the covariates for.
+#' @param layer_1 The first layer of the network to specify the covariates for.
+#' @param layer_2 The second layer of the network to specify the covariates for (optional, used for specifying cross-layer covariates).
+#' @param density A vector of covariate labels for density in layer_1.
+#' @param reciprocity A vector of covariate labels for reciprocity in layer_1.
+#' @param cross_density A vector of covariate labels for cross-layer density in layer_1 x layer_2 (only when layer_2 is not null).
+#' @param cross_reciprocity A vector of covariate labels for cross-layer reciprocity in layer_1 x layer_2 (only when layer_2 is not null).
+#' @param sender A vector of covariate labels for sender effect in layer_1.
+#' @param receiver A vector of covariate labels for receiver effect in layer_1.
+#'
+#' @return The updated Mp2Model with the new covariates.
 #' @export
-# add_covar.Mp2Model <- function(model_obj, covar_lab, param, layer_lab=NULL, mean_prior=NULL, sd_prior=NULL,...) {
-#     create_covar <- function(var_name, t_or_h, is_within, value, mean_prior, sd_prior) {
-#         return(list(var_name=var_name, t_or_h=t_or_h, is_within=is_within, value=value, mean_prior=mean_prior, sd_prior=sd_prior))
-#     }
-    
-#     within_param <- c("density", "reciprocity", "sender", "receiver")
-#     cross_param <- c("cross_density", "cross_reciprocity")
-#     dyad_param <- c("density", "reciprocity", "cross_density", "cross_reciprocity")
-#     actor_param <- c("sender", "receiver")
-
-#     if (param %in% dyad_param) {
-#         value = model_obj$data$dyad_covar[[covar_lab]]
-#     } else if (param %in% actor_param) {
-#         value = model_obj$data$actor_covar[[covar_lab]]
-#     } else {
-#         stop("Invalid param")
-#     }
-#     if (is.null(value)) {
-#         stop("Covariate not found")
-#     }
-
-#     #names(res) = paste(var_name, covar, outcome, sep="_")
-#     if (param %in% within_param) {
-#         is_within = TRUE
-#         if (is.null(layer_lab)) {
-#             idx_seq = 1:model_obj$t
-#             layer_lab = model_obj$dep_lab
-#         }else{
-#             idx_seq = which(model_obj$dep_lab == layer_lab)
-#         }
-#     } else if (param %in% cross_param) {
-#         is_within = FALSE
-#         if (is.null(layer_lab)) {
-#             idx_seq = 1:model_obj$H
-#             layer_lab = model_obj$pair_lab
-#         }else{
-#             idx_seq = which(model_obj$pair_lab == layer_lab)
-#         }
-#     } else {
-#         stop("Invalid parameter")
-#     }
-
-#     res = lapply(idx_seq, create_covar, var_name=param, is_within=is_within, value=value, mean_prior=mean_prior, sd_prior=sd_prior)
-#     names(res) = paste(param, covar_lab, layer_lab, sep="_")
-#     for (covar_name in names(res)) {
-#         if (covar_name %in% names(model_obj$model$covar)) {
-#             print("Covariate already exists, overwriting.")
-#         }
-#         model_obj$model$covar[[covar_name]] = res[[covar_name]]
-#     }
-#     return(model_obj)
-# }
-
 update_covar <- function(model_obj, layer_1, layer_2=NULL, density=NULL, reciprocity=NULL, cross_density=NULL, cross_reciprocity=NULL, sender=NULL, receiver=NULL) {
 
     create_covar <- function(var_name, t_or_h, is_within, covar_lab, mean_prior=NULL, sd_prior=NULL) {
@@ -177,15 +119,11 @@ update_covar <- function(model_obj, layer_1, layer_2=NULL, density=NULL, recipro
 
 }
 
-#param: "density", "reciprocity",  "cross_density", "cross_reciprocity", "sender", "receiver", "LKJ"
-# layer_lab: layer name or pair name, null means all layers
-# type: baseline, covariate
-# covar_lab: covariate name, null if it's not covariate prior
-# optional: mean, sd, eta, alpha, beta
-# used before fitting the model
 #' Update prior parameters in the model
 #'
-#' @param model_obj An object of the model where the prior parameters will be updated.
+#' This function updates the prior parameters in a given Mp2Model object. It allows for updating parameters related to density, reciprocity, cross-density, cross-reciprocity, sender, receiver, and LKJ. The parameters can be of type baseline, random, or covariate.
+#'
+#' @param model_obj An object of the class Mp2Model where the prior parameters will be updated.
 #' @param param A character string indicating the parameter to be updated. It can be one of "density", "reciprocity", "cross_density", "cross_reciprocity", "sender", "receiver", "LKJ".
 #' @param type A character string indicating the type of the parameter. It can be one of "baseline", "random", "covariate".
 #' @param layer_lab A character string indicating the layer name or pair name. If NULL, all layers will be updated.
@@ -198,7 +136,11 @@ update_covar <- function(model_obj, layer_1, layer_2=NULL, density=NULL, recipro
 #' @param ... Additional arguments.
 #' @return The updated model object.
 #' @examples
-#' # TODO: Add examples of usage
+#' #not run
+#' #model_obj <- update_prior(model_obj, "density", "baseline", layer_lab="network1", mean=0.5, sd=0.1)
+#' #model_obj <- update_prior(model_obj, "cross_density", "baseline", layer_lab=c("network1", "network2"), mean=0.5, sd=0.1)
+#' #model_obj <- update_prior(model_obj, "sender", "covariate", layer_lab="network1", covar_lab="actor_covar1", mean=0.5, sd=0.1)
+#' #model_obj <- update_prior(model_obj, "LKJ", "random", eta=2, alpha=50, beta=2)
 #' @export
 update_prior <- function(model_obj, param, type, layer_lab=NULL, covar_lab=NULL, mean=NULL, sd=NULL, eta=NULL, alpha=NULL, beta=NULL, ...){
     dict_baseline <- list("density" = "mu", "reciprocity" = "rho", "cross_density" = "cross_mu", "cross_reciprocity" = "cross_rho")
@@ -268,16 +210,32 @@ fit <- function(model_obj, ...) {
   UseMethod("fit")
 }
 
-#' fit function for "Mp2Model" class
+#' Fit Mp2Model
 #'
-#' @param model_obj An object of class "Mp2Model"
-#' @param ... Other arguments passed to or from other methods
+#' This function fits the Mp2Model using Stan.
 #'
-#' @export fit.Mp2Model
+#' @param model_obj The Mp2Model object.
+#' @param chains The number of chains to run in parallel (default: 4), see rstan::stan() documentation for more details.
+#' @param iter The total number of iterations (default: 200), see rstan::stan() documentation for more details.
+#' @param warmup The number of warmup iterations (default: floor(iter/2)), see rstan::stan() documentation for more details.
+#' @param thin The thinning interval (default: 1), see rstan::stan() documentation for more details.
+#' @param seed The random seed (default: a random integer), see rstan::stan() documentation for more details.
+#' @param mc.cores The number of CPU cores to use for parallel computing (default: all available cores by calling parallel::detectCores()), see rstan::stan() documentation for more details.
+#' @param auto_write Whether to automatically write compiled Stan models to disk (default: TRUE), see rstan::stan() documentation for more details.
+#' @param stan_file The name of the Stan file (default: "multiplex_p2_low_mem.stan").
+#' @param prior_sim Whether to simulate from the prior distribution (default: FALSE).
+#' @param ... Additional arguments passed to rstan::stan(), see rstan::stan() documentation for more details.
+#'
+#' @return The updated Mp2Model object with fit results.
+#'
+#' @examples
+#' #model <- Mp2Model(...)
+#' #model <- fit(model)
+#' #summary(model)
 #' @export
 fit.Mp2Model <- function(model_obj, chains = 4, iter = 200, warmup = floor(iter/2),
                      thin = 1, seed = sample.int(.Machine$integer.max, 1),
-                     stan_file = "multiplex_p2_low_mem.stan", prior_sim = FALSE,mc.cores = parallel::detectCores(), auto_write = TRUE,...) {
+                    prior_sim = FALSE,mc.cores = parallel::detectCores(), auto_write = TRUE, stan_file = "multiplex_p2_low_mem.stan",...) {
 
     model_obj <- create_stan_data(model_obj)
     model_obj$fit_res$stan_data$prior_sim = prior_sim
@@ -310,7 +268,6 @@ fit.Mp2Model <- function(model_obj, chains = 4, iter = 200, warmup = floor(iter/
 #'
 #' @param model_obj The model object for which the summary is to be created.
 #' @return A list containing the fixed and random effects summaries, along with parameter labels.
-#' @export
 create_summary <- function(model_obj) {
     pair_lab= model_obj$pair_lab
     dep_lab = model_obj$dep_lab
@@ -326,21 +283,29 @@ create_summary <- function(model_obj) {
 
 #' get draws function
 #' 
-#' This function obtains the draws from the fitted Stan model of the Mp2Model class.
+#' This function obtains the network draws from the fitted Stan model of the Mp2Model class.
 #' 
 #' @param model_obj An object of class "Mp2Model"
-#' @return draws in the speficied format
+#' @return draws in the specified format
 #' @export
 extract_network_draws <- function(model_obj, ...) {
   UseMethod("extract_network_draws")
 }
 
-#' Extract simulated network outcome from the (prior) posterior of a fitted stan object of the Mp2Model class
-#' 
-#' @param model_obj  An object of class "Mp2Model"
-#' @param sim_num integer: number of simulations to extract, counting from the tail of the posterior draws
-#' @param network_type string: type of network to return. Options are "adj" for adjacency matrix (default), "igraph" for igraph object, or "network" for network object.
-#' @return A list of length `sim_num`. Each element of the list is another list of `t` networks. These networks represent the (prior) posterior draws of the simulated network outcome, in the specified format.
+#' Extract network draws from a model object
+#'
+#' This function extracts network draws from a fitted Mp2Model object. It returns a list of network draws, where each draw is an adjacency matrix (if type = "adj") or the dyadic outcome in dyad form (if type = "dyad").
+#'
+#' @param model_obj The Mp2Model object.
+#' @param sim_num The number of network draws to extract.
+#' @param network_type The type of network structure to extract. Options are default "adj" (adjacency matrix),
+#'   "dyad" (dyad matrix).
+#' @return A list of network draws.
+#'   If the number of draws is less than the total iterations, a warning message is printed and all
+#'   available draws are returned.
+#'
+#' @examples
+#' #sim_nets <- extract_network_draws(fit, sim_num = 100, network_type = "adj")
 #' @export
 extract_network_draws <- function(model_obj, sim_num, network_type = "adj") {
     n <- model_obj$n
@@ -358,18 +323,28 @@ extract_network_draws <- function(model_obj, sim_num, network_type = "adj") {
     return(res)
 }
 
-
+#' This function prints the summary of a Mp2Model object.
+#'
+#' @param model_obj A Mp2Model object.
+#' @param ... Additional arguments to be passed to the print function.
+#'
+#' @return None
 #' @export
 summary.Mp2Model <- function(model_obj, ...) {
     s <- model_obj$fit_res$summary
     print(s)
-    
 }
 
 
 #' @export
 print.Mp2Model <- function(model_obj, ...) {
-    cat(attr(model_obj, "outcome"))
+    cat("The dependent multiplex network layers are ", paste(model_obj$dep_lab, sep=","), "\n")
+    cat("The covariates are ", paste(names(model_obj$model$covar), sep=","), "\n")
+    if (!is.null(model_obj$fit_res$stan_fit)) {
+        cat("The model has been fitted\n")
+    } else {
+        cat("The model has not been fitted, check model_obj$fit_res for details\n")
+    }
 }
 
 #' Extract parameter summary from the fitted stan object
@@ -378,7 +353,6 @@ print.Mp2Model <- function(model_obj, ...) {
 #' @param pattern string: a regex pattern corresponding to the desired parameters, 
 #' default is "^mu|^rho|^cross|fixed", which are all the fixed parameters
 #' @return a matrix of the model output summary of the specified parameters
-#' @export
 extract_model_info <- function(fit, pattern = "^mu|^rho|^cross|fixed") {
   s <- rstan::summary(fit)$summary
   res <- s[grep(pattern,rownames(s)),1:10]
@@ -473,15 +447,24 @@ make_random_summary <- function(fit, outcome) {
     return(list("summary" = res, "par_labels" = P))
 }
 
-#' Extract draws from the (prior) posterior of a fitted stan object
+#' Extracts draws from a Stan model fit
+#'
+#' This function takes a Stan model fit object and a parameter name, and returns
+#' the draws for that parameter from the fit.
+#'
+#' @param fit A Stan model fit object.
+#' @param parameter The name of the parameter to extract draws for, options are "mu", "rho", "cross_mu", "cross_rho", "alpha", "beta", "Sigma".
+#'
+#' @return A vector of draws for the specified parameter.
+#'
+#' @examples
+#' #draws <- extract_draws(stan_fit, "mu")
 #' 
-#' @param fit rstan fit object: fitted stan object
-#' @param parameter string: name of the desired parameters, y_tilde is the simulated outcome of the model
-#' @return the (prior) posterior draws of the specified parameters
+#' @import rstan
+#' @export
 extract_draws <- function(fit, parameter) {
-  s <- rstan::extract(fit)
-  res <- s[[parameter]]
-  return(res)
+    s <- rstan::extract(fit)
+    res <- s[[parameter]]
+    return(res)
 }
-
 

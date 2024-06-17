@@ -25,10 +25,7 @@ get_dyads <- function(n){
 #' @param Ms list of adj matrices representing the multiplex network
 #'
 #' @return return a vector y of size N, such that y in {1,...,2^(2*t)}^N representing the outcomes on a pair of dyads.
-
 matrix_to_dyads_nd <- function(Ms) {
-  #given a vector of dyad-wise outcome for dyads i
-  #return the multiplex outcome y \in {1,...,2^(2*t)}
   helper <- function(ns){
     res <- sapply(2:t, function(i) (ns[i] - 1)*4^(i - 1))
     res = sum(res) + ns[1]
@@ -50,7 +47,6 @@ matrix_to_dyads_nd <- function(Ms) {
 #' @param M a single adj matrices representing one layer of the multiplex network
 #'
 #' @return return a vector y of size N the dyad-wise outcome y in {1,2,3,4}^N
-#' @export
 matrix_to_dyads_1d <- function(M){
   n = nrow(M)
   y <- c()
@@ -126,11 +122,6 @@ dyads_nd_to_1d <- function(y_nd, t){
 #' @param n The number of actors.
 #'
 #' @return An adjacency matrix reconstructed from the dyad-wise results.
-#' @export
-#'
-#' @examples
-#' # replace with a valid example
-#'
 dyads_to_matrix_1d <- function(y, n) {
   res <- matrix(rep(0, n*n), nrow = n)
   counter = 1
@@ -166,10 +157,6 @@ dyads_to_matrix_1d <- function(y, n) {
 #'
 #' @return A list of `t` adjacency matrices.
 #' @export
-#'
-#' @examples
-#' # replace with a valid example
-#'
 dyads_to_matrix_nd <- function(y_nd, t, n){
   networks <- list()
   if (t < 2) { #back to the uniplex case
@@ -195,36 +182,6 @@ dyads_to_matrix_nd <- function(y_nd, t, n){
 #' @param network_type Type of network to return. Options are "adj" for adjacency matrix (default), "igraph" for igraph object, or "network" for network object.
 #'
 #' @return A list of B lists of t adjacency matrices.
-#' @export
-# dyads_to_matrix_list <- function(dyad_df, n, t, network_type = "adj") {
-#   B <- nrow(dyad_df)
-#   matrices <- list()
-#   if (t > 1) {
-#     for (i in 1:B) {
-#       res <- dyads_to_matrix_nd(dyad_df[i,], t, n)
-#       if (network_type == "igraph") {
-#         matrices[[i]] <- lapply(res, igraph::graph_from_adjacency_matrix)
-#       } else if (network_type == "network") {
-#         matrices[[i]] <- lapply(res, network::network, directed=T)
-#       } else if(network_type == "adj") {
-#         matrices[[i]] <- res      
-#       }
-#     }
-#   } else {
-#     #back to the uniplex case
-#     for (i in 1:B) {
-#       res <- dyads_to_matrix_1d(dyad_df[i,], n)
-#       if (network_type == "igraph") {
-#         matrices[[i]] <- igraph::graph_from_adjacency_matrix(res)
-#       } else if (network_type == "network") {
-#         matrices[[i]] <- network::network(res, directed=T)
-#       } else if(network_type == "adj") {
-#         matrices[[i]] <- res      
-#       }
-#     }
-#   }
-#   return(matrices)
-# }
 dyads_to_matrix_list <- function(dyad_df, n, t, dep_lab, network_type) {
   B <- nrow(dyad_df)
   matrices <- vector("list", length = t) #a list with t elements representing t layers of the network
@@ -250,7 +207,6 @@ dyads_to_matrix_list <- function(dyad_df, n, t, dep_lab, network_type) {
 #' @param no The value to return if the condition is FALSE.
 #'
 #' @return The value of `yes` if the condition is TRUE, and the value of `no` otherwise.
-#' @export
 ifelse_helper <- function(x, yes, no) {
   if (x) {
     return(yes)
@@ -290,7 +246,17 @@ na_check <- function(x) {
   }
 }
 
-#type: "dep_net", "dyad_covar", "actor_covar"
+
+#' Check if the input is valid for a given type.
+#'
+#' This function checks if the input is valid for a given type, such as "dep_net", "dyad_covar", or "actor_covar".
+#' For "dep_net" type, the input should be a list of matrices with binary values.
+#' For "dyad_covar" type, the input should be a list of numeric matrix with no missing values.
+#' For "actor_covar" type, the input should be a numeric data frame with no missing values.
+#'
+#' @param x The input to be checked.
+#' @param type The type of input to be checked.
+#' @return TRUE if the input is valid, FALSE otherwise.
 is_valid <- function(x, type) {
   all_numeric <- sapply(x, function(a) is.numeric(a) | is.logical(a))
   if (any(!all_numeric)) {

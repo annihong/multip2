@@ -9,17 +9,25 @@ extract_network_draws(model_obj, sim_num, network_type = "adj")
 extract_network_draws(model_obj, sim_num, network_type = "adj")
 }
 \arguments{
-\item{model_obj}{An object of class "Mp2Model"}
+\item{model_obj}{The Mp2Model object.}
 
-\item{sim_num}{integer: number of simulations to extract, counting from the tail of the posterior draws}
+\item{sim_num}{The number of network draws to extract.}
 
-\item{network_type}{string: type of network to return. Options are "adj" for adjacency matrix (default), "igraph" for igraph object, or "network" for network object.}
+\item{network_type}{The type of network structure to extract. Options are default "adj" (adjacency matrix),
+"dyad" (dyad matrix).}
 }
 \value{
-draws in the speficied format
+draws in the specified format
 
-A list of length \code{sim_num}. Each element of the list is another list of \code{t} networks. These networks represent the (prior) posterior draws of the simulated network outcome, in the specified format.
+A list of network draws.
+If the number of draws is less than the total iterations, a warning message is printed and all
+available draws are returned.
 }
 \description{
-This function obtains the draws from the fitted Stan model of the Mp2Model class.
+This function obtains the network draws from the fitted Stan model of the Mp2Model class.
+
+This function extracts network draws from a fitted Mp2Model object. It returns a list of network draws, where each draw is an adjacency matrix (if type = "adj") or the dyadic outcome in dyad form (if type = "dyad").
+}
+\examples{
+#sim_nets <- extract_network_draws(fit, sim_num = 100, network_type = "adj")
 }

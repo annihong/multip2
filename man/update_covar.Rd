@@ -2,7 +2,7 @@
 % Please edit documentation in R/classes.R
 \name{update_covar}
 \alias{update_covar}
-\title{Add covariates to the model}
+\title{Update Covariate}
 \usage{
 update_covar(
   model_obj,
@@ -17,21 +17,27 @@ update_covar(
 )
 }
 \arguments{
-\item{model_obj}{The model object to which the covariate will be added.}
+\item{model_obj}{An object of the class Mp2Model to update the covariates for.}
 
-\item{covar_lab}{The label of the covariate.}
+\item{layer_1}{The first layer of the network to specify the covariates for.}
 
-\item{param}{The parameter associated with the covariate.}
+\item{layer_2}{The second layer of the network to specify the covariates for (optional, used for specifying cross-layer covariates).}
 
-\item{layer_lab}{The label of the layer (for within-layer covariates) or pair (for cross-layer covariates) to which the covariate belongs. If not specified, the covariate will be added to all layers or pairs.}
+\item{density}{A vector of covariate labels for density in layer_1.}
 
-\item{mean_prior}{The mean prior for the covariate. If not specified, no prior will be used.}
+\item{reciprocity}{A vector of covariate labels for reciprocity in layer_1.}
 
-\item{sd_prior}{The standard deviation prior for the covariate. If not specified, no prior will be used.}
+\item{cross_density}{A vector of covariate labels for cross-layer density in layer_1 x layer_2 (only when layer_2 is not null).}
+
+\item{cross_reciprocity}{A vector of covariate labels for cross-layer reciprocity in layer_1 x layer_2 (only when layer_2 is not null).}
+
+\item{sender}{A vector of covariate labels for sender effect in layer_1.}
+
+\item{receiver}{A vector of covariate labels for receiver effect in layer_1.}
 }
 \value{
-The updated model object with the added covariate.
+The updated Mp2Model with the new covariates.
 }
 \description{
-This function adds covariates to the model object. It supports different types of covariates, such as within-layer covariates and cross-layer covariates. The function checks the type of covariate and adds it to the appropriate section of the model object.
+This function updates the covariates in a given model object based on the specified parameters.
 }

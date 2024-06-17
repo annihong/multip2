@@ -18,7 +18,3 @@ An adjacency matrix reconstructed from the dyad-wise results.
 Given a vector of dyad-wise results \code{y} in {1,2,3,4}, and the number of actors \code{n},
 this function reconstructs the adjacency matrix.
 }
-\examples{
-# replace with a valid example
-
-}

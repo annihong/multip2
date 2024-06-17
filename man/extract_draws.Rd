@@ -2,18 +2,23 @@
 % Please edit documentation in R/classes.R
 \name{extract_draws}
 \alias{extract_draws}
-\title{Extract draws from the (prior) posterior of a fitted stan object}
+\title{Extracts draws from a Stan model fit}
 \usage{
 extract_draws(fit, parameter)
 }
 \arguments{
-\item{fit}{rstan fit object: fitted stan object}
+\item{fit}{A Stan model fit object.}
 
-\item{parameter}{string: name of the desired parameters, y_tilde is the simulated outcome of the model}
+\item{parameter}{The name of the parameter to extract draws for, options are "mu", "rho", "cross_mu", "cross_rho", "alpha", "beta", "Sigma".}
 }
 \value{
-the (prior) posterior draws of the specified parameters
+A vector of draws for the specified parameter.
 }
 \description{
-Extract draws from the (prior) posterior of a fitted stan object
+This function takes a Stan model fit object and a parameter name, and returns
+the draws for that parameter from the fit.
+}
+\examples{
+#draws <- extract_draws(stan_fit, "mu")
+
 }

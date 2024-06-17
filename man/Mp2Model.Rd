@@ -2,48 +2,27 @@
 % Please edit documentation in R/classes.R
 \name{Mp2Model}
 \alias{Mp2Model}
-\title{Format covariates data for stan estimation}
+\title{Mp2Model function}
 \usage{
 Mp2Model(dep_net, dyad_covar = NULL, actor_covar = NULL, ...)
 }
 \arguments{
-\item{outcome}{A character vector of the names of the layers of networks in the network_data as the outcome multiplex network}
+\item{dep_net}{A named list of matrices representing the dependent multiplex network (outcome), values are binary or NA.}
 
-\item{network_data}{list of p + t matrices of dim n x n : network outcomes and network covariates, p is the number of network covariates and t is the number of layers in the multiplex network outcome.}
+\item{dyad_covar}{A list of matrices representing the dyadic covariates (optional), logical or numeric, but not NA.}
 
-\item{actor_data}{n x p data frame: p covariates of length of the number of actors (n)}
-
-\item{senders_covar}{A character vector indicating the names of the covariates to include for the senders.}
-
-\item{receivers_covar}{A character vector indicating the names of the covariates to include for the receivers.}
-
-\item{density_covar}{A character vector indicating the names of the covariates to include for the density.}
-
-\item{reciprocity_covar}{A character vector indicating the names of the covariates to include for the reciprocity.}
-
-\item{cross_density_covar}{A character vector indicating the names of the covariates to include for the cross-layer density.}
-
-\item{cross_reciprocity_covar}{A character vector indicating the names of the covariates to include for the cross-layer reciprocity.}
-
-\item{custom_covars}{A list of custom covariates to include in the model.}
-
-\item{chains}{An integer indicating the number of Markov chains to run.}
-
-\item{iter}{An integer indicating the number of iterations per chain.}
-
-\item{warmup}{An integer indicating the number of warmup iterations per chain.}
-
-\item{thin}{An integer indicating the thinning rate for the chains.}
-
-\item{seed}{An integer indicating the random seed for the chains.}
-
-\item{stan_file}{A character string indicating the name of the stan file to use, default is "multiplex_p2.stan".}
+\item{actor_covar}{A data frame representing the actor covariates (optional), logical or numeric, but not NA.}
 }
 \value{
-a Mp2Model object
-
-A list containing the fitted Stan model and parameter labels.
+A new Mp2Model object representing the empty model.
 }
 \description{
-Format covariates data for stan estimation
+This function creates an empty model of the class Mp2Model.
+}
+\details{
+This function creates a default empty model for MultiP2 analysis. It takes in the dependent network, dyadic covariates, and actor covariates (optional) as input. The function checks the validity of the input arguments and returns a new Mp2Model object with the specified attributes.
+}
+\examples{
+#not run
+#model <- Mp2Model(dep_net, dyad_covar, actor_covar)
 }

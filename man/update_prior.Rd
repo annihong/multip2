@@ -19,7 +19,7 @@ update_prior(
 )
 }
 \arguments{
-\item{model_obj}{An object of the model where the prior parameters will be updated.}
+\item{model_obj}{An object of the class Mp2Model where the prior parameters will be updated.}
 
 \item{param}{A character string indicating the parameter to be updated. It can be one of "density", "reciprocity", "cross_density", "cross_reciprocity", "sender", "receiver", "LKJ".}
 
@@ -45,8 +45,12 @@ update_prior(
 The updated model object.
 }
 \description{
-Update prior parameters in the model
+This function updates the prior parameters in a given Mp2Model object. It allows for updating parameters related to density, reciprocity, cross-density, cross-reciprocity, sender, receiver, and LKJ. The parameters can be of type baseline, random, or covariate.
 }
 \examples{
-# TODO: Add examples of usage
+#not run
+#model_obj <- update_prior(model_obj, "density", "baseline", layer_lab="network1", mean=0.5, sd=0.1)
+#model_obj <- update_prior(model_obj, "cross_density", "baseline", layer_lab=c("network1", "network2"), mean=0.5, sd=0.1)
+#model_obj <- update_prior(model_obj, "sender", "covariate", layer_lab="network1", covar_lab="actor_covar1", mean=0.5, sd=0.1)
+#model_obj <- update_prior(model_obj, "LKJ", "random", eta=2, alpha=50, beta=2)
 }

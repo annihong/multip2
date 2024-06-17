@@ -14,7 +14,6 @@ graph_similarity <- function(matrix1, matrix2){
 
 # given a list of networks, and the function (e.g., jaccard_cross_density)
 # return a list of H jaccard indices
-
 jaccard_list <- function(networks, func_J){
   pairs <- get_dyads(length(networks))
   res <- c()
