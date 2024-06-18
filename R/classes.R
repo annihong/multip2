@@ -14,22 +14,26 @@
 #' #model <- Mp2Model(dep_net, dyad_covar, actor_covar)
 #' @export
 Mp2Model <- function(dep_net, dyad_covar=NULL, actor_covar=NULL, ...) {
-    stopifnot(is_valid(dep_net, type = "dep_net"))
-    if (!is.null(dyad_covar)) {
-        stopifnot(is_valid(dyad_covar, type = "dyad_covar"))
-    }
-    if (!is.null(actor_covar)) {
-        stopifnot(is_valid(actor_covar, type = "actor_covar"))
-    }
-
     t = length(dep_net)
     H = t*(t - 1)/2
     n = nrow(dep_net[[1]])
+    stopifnot(is_valid(dep_net, type = "dep_net", n))
+    if (!is.null(dyad_covar)) {
+        stopifnot(is_valid(dyad_covar, type = "dyad_covar", n))
+    }
+    if (!is.null(actor_covar)) {
+        stopifnot(is_valid(actor_covar, type = "actor_covar", n))
+    }
+
+    if (is.null(names(dep_net))) {
+        names(dep_net) <- paste0("network", 1:t)
+        print(paste("Dependent network layer(s) are renamed as", names(dep_net), sep=" "))
+    }
     dep_lab = names(dep_net)
-    pair_lab = get_pair_names(dep_lab)
+    pair_lab = ifelse_helper(H > 0, get_pair_names(dep_lab), NULL)
 
     covar = list() #start with an empty model
-    prior <- default_prior_empty_mdl(t, H, dep_lab, pair_lab)
+    prior <- default_prior_empty_mdl(dep_lab, pair_lab)
 
     newMp2Model = structure(list(
         t = t, H = H, n = n,

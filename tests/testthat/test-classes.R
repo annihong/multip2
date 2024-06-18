@@ -1,4 +1,72 @@
+test_that("Uniplex empty model works as expected", {
+  # Create test data
+  dep_net <- list(matrix(0, nrow = 10, ncol = 10))
+  dyad_covar <- list(matrix(0, nrow = 10, ncol = 10))
+  actor_covar <- data.frame(matrix(0, nrow = 10, ncol = 5))
 
+  # Call the function
+  model <- Mp2Model(dep_net, dyad_covar, actor_covar)
+  names(dep_net) <- "network1" 
+
+  # Check the attributes of the model
+  expect_equal(model$t, 1)
+  expect_equal(model$H, 0)
+  expect_equal(model$n, 10)
+  expect_equal(model$dep_lab, "network1")
+  expect_equal(model$pair_lab, NULL)
+  expect_equal(model$dyad_covar_lab, names(dyad_covar))
+  expect_equal(model$actor_covar_lab, names(actor_covar))
+  expect_equal(model$data$dep_net, dep_net)
+  expect_equal(model$data$dyad_covar, dyad_covar)
+  expect_equal(model$data$actor_covar, actor_covar)
+  expect_equal(model$model$covar, list())
+  expect_equal(model$model$prior, default_prior_empty_mdl(names(dep_net), NULL))
+  expect_equal(model$model$full_prior, NULL)
+  expect_equal(model$fit_res$stan_data, NULL)
+  expect_equal(model$fit_res$stan_fit, NULL)
+  expect_equal(model$fit_res$summary, NULL)
+  expect_equal(model$fit_res$par_labels, NULL)
+})
+
+test_that("Multiplex empty model works as expected", {
+  # Create test data
+  dep_net <- list("net1" = matrix(0, nrow = 10, ncol = 10), "net2"=matrix(0, nrow = 10, ncol = 10))
+  dyad_covar <- list(matrix(0, nrow = 10, ncol = 10))
+  actor_covar <- data.frame(matrix(0, nrow = 10, ncol = 5))
+
+  # Call the function
+  model <- Mp2Model(dep_net, dyad_covar, actor_covar)
+
+  # Check the attributes of the model
+  expect_equal(model$t, 2)
+  expect_equal(model$H, 1)
+  expect_equal(model$n, 10)
+  expect_equal(model$dep_lab, names(dep_net))
+  expect_equal(model$pair_lab, get_pair_names(names(dep_net)))
+  expect_equal(model$dyad_covar_lab, names(dyad_covar))
+  expect_equal(model$actor_covar_lab, names(actor_covar))
+  expect_equal(model$data$dep_net, dep_net)
+  expect_equal(model$data$dyad_covar, dyad_covar)
+  expect_equal(model$data$actor_covar, actor_covar)
+  expect_equal(model$model$covar, list())
+  expect_equal(model$model$prior, default_prior_empty_mdl(names(dep_net), get_pair_names(names(dep_net))))
+  expect_equal(model$model$full_prior, NULL)
+  expect_equal(model$fit_res$stan_data, NULL)
+  expect_equal(model$fit_res$stan_fit, NULL)
+  expect_equal(model$fit_res$summary, NULL)
+  expect_equal(model$fit_res$par_labels, NULL)
+})
+
+
+test_that("Mp2Model throws an error with invalid input", {
+  # Create test data with invalid input
+  dep_net <- list(matrix(0, nrow = 10, ncol = 10))
+  dyad_covar <- list(matrix(0, nrow = 5, ncol = 5))  # Invalid dimensions
+  actor_covar <- data.frame(matrix(0, nrow = 10, ncol = 5))
+
+  # Call the function and expect an error
+  expect_error(Mp2Model(dep_net, dyad_covar, actor_covar), "is_valid")
+})
 # # Test for baseline parameter with mean and sd
 # test_that("update_prior sets baseline parameter with mean and sd", {
 #   model_obj <- list(

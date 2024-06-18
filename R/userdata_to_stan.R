@@ -229,7 +229,10 @@ create_stan_data <- function(model_obj) {
 }
 
 
-default_prior_empty_mdl <- function(t, H, dep_lab, pair_lab) {
+default_prior_empty_mdl <- function(dep_lab, pair_lab) {
+    t = length(dep_lab)
+    H = t*(t - 1)/2
+    stopifnot(H == length(pair_lab))
     prior <- list( 
         mu_mean_prior = array(0, t), 
         mu_sd_prior = array(10, t), 

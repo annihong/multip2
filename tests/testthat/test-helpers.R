@@ -4,12 +4,14 @@ library(testthat)
 # Test dimension_check function
 test_that("dimension_check returns TRUE when all matrices have the same dimensions", {
   x <- list(matrix(1:4, nrow = 2), matrix(5:8, nrow = 2))
-  expect_true(dimension_check(x))
+  n = 2
+  expect_true(dimension_check(x, n))
 })
 
 test_that("dimension_check returns FALSE when matrices have different dimensions", {
   x <- list(matrix(1:4, nrow = 2), matrix(5:9, nrow = 3))
-  expect_false(dimension_check(x))
+   n = 3
+  expect_false(dimension_check(x, n))
 })
 
 # Test binary_check function
@@ -37,35 +39,41 @@ test_that("na_check returns FALSE when there are missing values", {
 # Test is_valid function
 test_that("is_valid returns TRUE for dep_net type with valid input", {
   x <- list(matrix(c(0, 1, 1, 0), nrow = 2), matrix(c(1, 0, 0, 1), nrow = 2))
-  expect_true(is_valid(x, "dep_net"))
+  n = 2
+  expect_true(is_valid(x, "dep_net", n))
 })
 
 test_that("is_valid returns FALSE for dep_net type with invalid input", {
   x <- list(matrix(c(0, 1, 1, 2), nrow = 2), matrix(c(1, 0, 0, 1), nrow = 2))
-  expect_false(is_valid(x, "dep_net"))
+  n = 2
+  expect_false(is_valid(x, "dep_net", 2))
 })
 
 test_that("is_valid returns TRUE for dyad_covar type with valid input", {
   x <- list(matrix(1:4, nrow = 2), matrix(5:8, nrow = 2))
-  expect_true(is_valid(x, "dyad_covar"))
+  n = 2
+  expect_true(is_valid(x, "dyad_covar",n = 2))
 })
 
 test_that("is_valid returns FALSE for dyad_covar type with invalid input", {
   x <- list(matrix(c(1, NA, 3, 4), nrow = 2), matrix(5:8, nrow = 2))
-  expect_false(is_valid(x, "dyad_covar"))
+  n = 2
+  expect_false(is_valid(x, "dyad_covar", n = 2))
 })
 
 test_that("is_valid returns TRUE for actor_covar type with valid input", {
   x <- data.frame(a = c(1, 2, 3), b = c(4, 5, 6))
-  expect_true(is_valid(x, "actor_covar"))
+  n = 3
+  expect_true(is_valid(x, "actor_covar", 3))
 })
 
 test_that("is_valid returns FALSE for actor_covar type with invalid input", {
   x <- data.frame(a = c(1, NA, 3), b = c(4, 5, 6))
-  expect_false(is_valid(x, "actor_covar"))
+  n = 3
+  expect_false(is_valid(x, "actor_covar", 3))
 })
 
-
+#tests for matrix_to_dyads_1d
 test_that("matrix_to_dyads_1d handles NA values correctly", {
   M <- matrix(c(1, NA, 1, 1), nrow = 2)
   expect_equal(matrix_to_dyads_1d(M), c(NA))

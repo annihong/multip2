@@ -215,8 +215,7 @@ ifelse_helper <- function(x, yes, no) {
   }
 }
 
-dimension_check <- function(x) {
-  n = ncol(x[[1]])
+dimension_check <- function(x, n) {
   dim_check = sapply(x, function(a) is.matrix(a) & nrow(a) == ncol(a) & nrow(a) == n)
   if (any(!dim_check) ) {
     print("Dimension check failed")
@@ -256,8 +255,9 @@ na_check <- function(x) {
 #'
 #' @param x The input to be checked.
 #' @param type The type of input to be checked.
+#' @param n The number of actors in the network.
 #' @return TRUE if the input is valid, FALSE otherwise.
-is_valid <- function(x, type) {
+is_valid <- function(x, type, n) {
   all_numeric <- sapply(x, function(a) is.numeric(a) | is.logical(a))
   if (any(!all_numeric)) {
     print("Not all elements are numeric/logical.")
@@ -268,19 +268,19 @@ is_valid <- function(x, type) {
       print("Not a list")
       return(FALSE)
     }
-    return(dimension_check(x) & binary_check(x))
+    return(dimension_check(x, n) & binary_check(x))
 
   } else if (type == "dyad_covar") {
     if (!is.list(x)) {
       print("Not a list")
       return(FALSE)
     }
-    return(dimension_check(x) & na_check(x))
+    return(dimension_check(x, n) & na_check(x))
   } else if (type == "actor_covar") {
     if (!is.data.frame(x)) {
       print("Not a data frame")
       return(FALSE)
     }
-    return(na_check(x))
+    return(nrow(x) == n & na_check(x))
   }
 }

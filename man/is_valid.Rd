@@ -4,12 +4,14 @@
 \alias{is_valid}
 \title{Check if the input is valid for a given type.}
 \usage{
-is_valid(x, type)
+is_valid(x, type, n)
 }
 \arguments{
 \item{x}{The input to be checked.}
 
 \item{type}{The type of input to be checked.}
+
+\item{n}{The number of actors in the network.}
 }
 \value{
 TRUE if the input is valid, FALSE otherwise.
