@@ -15,7 +15,7 @@
   mc.cores = parallel::detectCores(),
   auto_write = TRUE,
   stan_file = "multiplex_p2_low_mem.stan",
-  ...
+  refresh = 1
 )
 }
 \arguments{

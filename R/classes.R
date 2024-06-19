@@ -65,6 +65,15 @@ Mp2Model <- function(dep_net, dyad_covar=NULL, actor_covar=NULL, ...) {
 #' @return The updated Mp2Model with the new covariates.
 #' @export
 update_covar <- function(model_obj, layer_1, layer_2=NULL, density=NULL, reciprocity=NULL, cross_density=NULL, cross_reciprocity=NULL, sender=NULL, receiver=NULL) {
+    if (!is.null(cross_density) || !is.null(cross_reciprocity)) {
+        if (length(model_obj$dep_lab) == 1) { #uniplex network
+            stop("Cross-layer covariates are not allowed for uniplex network")
+        }
+
+        if (is.null(layer_2)) { #uniplex network
+            stop("Cross-layer covariates require two layers")
+        }
+    }
 
     create_covar <- function(var_name, t_or_h, is_within, covar_lab, mean_prior=NULL, sd_prior=NULL) {
         return(list(var_name=var_name, t_or_h=t_or_h, is_within=is_within, covar_lab=covar_lab, mean_prior=mean_prior, sd_prior=sd_prior))
@@ -81,7 +90,11 @@ update_covar <- function(model_obj, layer_1, layer_2=NULL, density=NULL, recipro
         }
         for (param_name in c("density", "reciprocity", "sender", "receiver")) {
             for (covar in params[[param_name]]) {
-                if (! covar %in% names(model_obj$data$dyad_covar) && ! covar %in% names(model_obj$data$actor_covar)) {
+                if (param_name %in% c("density", "reciprocity") && !covar %in% names(model_obj$data$dyad_covar)) {
+                    stop("Covariate not found")
+                }
+
+                if (param_name %in% c("sender", "receiver") && ! covar %in% names(model_obj$data$actor_covar)) {
                     stop("Covariate not found")
                 }
                 res = create_covar(param_name, idx_seq, TRUE, covar)
@@ -99,18 +112,20 @@ update_covar <- function(model_obj, layer_1, layer_2=NULL, density=NULL, recipro
             pair_lab = paste(layer_2, layer_1, sep=":")
             idx_seq = which(model_obj$pair_lab == pair_lab)
         }
-
         if (length(idx_seq) == 0) {
             stop("Pair of layers not found")
         }
-        
+
+        if (!is.null(density) || !is.null(reciprocity) || !is.null(sender) || !is.null(receiver)){
+            warning("Within-layer covariates are ignored since layer_2 is specified")
+        }
         for (param_name in c("cross_density", "cross_reciprocity")) {
             for (covar in params[[param_name]]) {
                 if (! covar %in% names(model_obj$data$dyad_covar)) {
                     stop("Covariate not found")
                 }
                 res = create_covar(param_name, idx_seq, FALSE, covar)
-                name = paste(param_name, covar, layer_1, layer_2, sep="_")
+                name = paste(param_name, covar, pair_lab, sep="_")
                 covariates[[name]] = res
             }
         }
@@ -172,6 +187,9 @@ update_prior <- function(model_obj, param, type, layer_lab=NULL, covar_lab=NULL,
         }
         
     } else if(type == "random") {
+        if (param != "LKJ") {
+            stop("Invalid param value")
+        }
        eta_name = "LJK_eta_prior"
        beta_name = "scale_beta_prior"
        alpha_name = "scale_alpha_prior"
@@ -186,7 +204,7 @@ update_prior <- function(model_obj, param, type, layer_lab=NULL, covar_lab=NULL,
         covar_names = paste(param, covar_lab, layer_lab, sep="_")
         for (covar_name in covar_names) {
             if (! covar_name %in% names(model_obj$model$covar)) {
-                stop("Covariate not found")
+                stop(paste("Covariate", covar_name, "not found"))
             }
             model_obj$model$covar[[covar_name]]$mean_prior <- ifelse_helper(is.null(mean), model_obj$model$covar[[covar_name]]$mean_prior, mean)
             model_obj$model$covar[[covar_name]]$sd_prior <- ifelse_helper(is.null(sd), model_obj$model$covar[[covar_name]]$sd_prior, sd)
@@ -237,7 +255,7 @@ fit <- function(model_obj, ...) {
 #' @export
 fit.Mp2Model <- function(model_obj, chains = 4, iter = 200, warmup = floor(iter/2),
                      thin = 1, seed = sample.int(.Machine$integer.max, 1),
-                    prior_sim = FALSE,mc.cores = parallel::detectCores(), auto_write = TRUE, stan_file = "multiplex_p2_low_mem.stan",...) {
+                    prior_sim = FALSE,mc.cores = parallel::detectCores(), auto_write = TRUE, stan_file = "multiplex_p2_low_mem.stan", refresh = 1) {
 
     model_obj <- create_stan_data(model_obj)
     model_obj$fit_res$stan_data$prior_sim = prior_sim
@@ -254,7 +272,8 @@ fit.Mp2Model <- function(model_obj, chains = 4, iter = 200, warmup = floor(iter/
                     iter = iter,
                     warmup = warmup,
                     thin = thin,
-                    seed = seed
+                    seed = seed, 
+                    refresh = refresh
                     )
     model_obj$fit_res$stan_fit <- p2_fit
     s <- create_summary(model_obj)

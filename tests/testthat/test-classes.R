@@ -1,3 +1,17 @@
+n = 5
+networks = replicate(4, matrix(data=sample(c(0,1), n^2, replace=TRUE, prob=c(0.7,0.3)), nrow=n), simplify = FALSE) #self loops are ignored
+names(networks) <-  c("network1", "network2", "network_covariate1",      "network_covariate2")
+actor_data = data.frame(actor_attr1=1:n, actor_attr2=1:n)
+
+dep_net_uni <- networks[c("network1")]
+dep_net<- networks[c("network1", "network2")]
+dyad_covar <- networks[c("network_covariate1", "network_covariate2")]
+actor_covar <- actor_data[c("actor_attr1", "actor_attr2")]
+
+m_empty_uni <- Mp2Model(dep_net_uni, dyad_covar = dyad_covar, actor_covar = actor_data)
+m_empty <- Mp2Model(dep_net, dyad_covar = dyad_covar, actor_covar = actor_data)
+
+
 test_that("Uniplex empty model works as expected", {
   # Create test data
   dep_net <- list(matrix(0, nrow = 10, ncol = 10))
@@ -67,81 +81,184 @@ test_that("Mp2Model throws an error with invalid input", {
   # Call the function and expect an error
   expect_error(Mp2Model(dep_net, dyad_covar, actor_covar), "is_valid")
 })
-# # Test for baseline parameter with mean and sd
-# test_that("update_prior sets baseline parameter with mean and sd", {
-#   model_obj <- list(
-#     model = list(
-#       prior = list(
-#         mu_mean_prior = c(1, 2, 3),
-#         mu_sd_prior = c(0.1, 0.2, 0.3)
-#       )
-#     ),
-#     dep_lab = c("density", "reciprocity")
-#   )
-  
-#   updated_model_obj <- update_prior(model_obj, "density", "baseline", mean = 10, sd = 0.5)
-  
-#   expect_equal(updated_model_obj$model$prior$mu_mean_prior, c(10, 2, 3))
-#   expect_equal(updated_model_obj$model$prior$mu_sd_prior, c(0.5, 0.2, 0.3))
-# })
 
-# # Test for random parameter with eta, alpha, and beta
-# test_that("update_prior sets random parameter with eta, alpha, and beta", {
-#   model_obj <- list(
-#     model = list(
-#       prior = list(
-#         LJK_eta_prior = 0.1,
-#         scale_alpha_prior = 0.2,
-#         scale_beta_prior = 0.3
-#       )
-#     )
-#   )
-  
-#   updated_model_obj <- update_prior(model_obj, "density", "random", eta = 0.5, alpha = 0.8, beta = 0.9)
-  
-#   expect_equal(updated_model_obj$model$prior$LJK_eta_prior, 0.5)
-#   expect_equal(updated_model_obj$model$prior$scale_alpha_prior, 0.8)
-#   expect_equal(updated_model_obj$model$prior$scale_beta_prior, 0.9)
-# })
 
-# # Test for covariate parameter with mean and sd
-# test_that("update_prior sets covariate parameter with mean and sd", {
-#   model_obj <- list(
-#     model = list(
-#       prior = list(),
-#       covar = list(
-#         density_covar_lab_layer_lab = list(
-#           mean_prior = c(1, 2, 3),
-#           sd_prior = c(0.1, 0.2, 0.3)
-#         )
-#       )
-#     )
-#   )
-  
-#   updated_model_obj <- update_prior(model_obj, "density", "covariate", covar_lab = "covar_lab", mean = 10, sd = 0.5)
-  
-#   expect_equal(updated_model_obj$model$covar$density_covar_lab_layer_lab$mean_prior, c(10, 2, 3))
-#   expect_equal(updated_model_obj$model$covar$density_covar_lab_layer_lab$sd_prior, c(0.5, 0.2, 0.3))
-# })
 
-# # Test for invalid type
-# test_that("update_prior throws an error for invalid type", {
-#   model_obj <- list(
-#     model = list(
-#       prior = list()
-#     )
-#   )
-  
-#   expect_error(update_prior(model_obj, "density", "invalid_type"))
-# })
+test_that("update_covar correctly updates within-layer covariates uniplex and multiplex", {
+  model_obj <- m_empty_uni
+  # Update covariates for layer1
+  expect_error(update_covar(model_obj, layer_1 = "network1", density = c("network_covariate1", "network_covariate2"), reciprocity = c("actor_attr2")))
+  updated_model_obj <- update_covar(model_obj, layer_1 = "network1", density = c("network_covariate1","network_covariate2"), receiver = c("actor_attr2"))
+  # Check if the covariates are correctly updated
+  expect_equal(names(updated_model_obj$model$covar), c("density_network_covariate1_network1", "density_network_covariate2_network1", "receiver_actor_attr2_network1"))
 
-# # Test for missing covariate label
-# test_that("update_prior throws an error for missing covariate label", {
-#   model_obj <- list(
-#     model = list(
-#       prior = list()
-#     )
-#   )
+  model_obj <- m_empty
+  # Update covariates for layer1
+  updated_model_obj <- update_covar(model_obj, layer_1 = "network1", density = c("network_covariate1", "network_covariate2"), receiver = c("actor_attr2"))
   
-#   expect_error(update_prior(model_obj, "density", "covariate"))
-# })
+  # Check if the covariates are correctly updated
+  expect_equal(names(updated_model_obj$model$covar), c("density_network_covariate1_network1", "density_network_covariate2_network1", "receiver_actor_attr2_network1"))
+
+  updated_model_obj <- update_covar(model_obj, layer_1 = "network2", density = c("network_covariate1", "network_covariate2"), receiver = c("actor_attr2"))
+  
+  # Check if the covariates are correctly updated
+  expect_equal(names(updated_model_obj$model$covar), c("density_network_covariate1_network2", "density_network_covariate2_network2", "receiver_actor_attr2_network2"))
+})
+
+test_that("update_covar correctly updates cross-layer covariates", {
+  model_obj <- m_empty_uni
+  # Update cross-layer covariates for uniplex network should return an error
+  
+  expect_error(update_covar(model_obj, layer_1 = "network1", layer_2 = "network2",  cross_density = c("network_covariate1","network_covariate2"), receiver = c("actor_attr2")))
+
+  model_obj <- m_empty
+
+   expect_error(update_covar(model_obj, layer_1 = "network1", cross_density = c("network_covariate1","network_covariate2"), receiver = c("actor_attr2")))
+  # multiplex cross density
+  updated_model_obj <- update_covar(model_obj, layer_1 = "network1", layer_2 = "network2", cross_density = c("network_covariate1","network_covariate2"), receiver = c("actor_attr2"))
+  
+  # Check if the covariates are correctly updated
+  expect_equal(names(updated_model_obj$model$covar), c("cross_density_network_covariate1_network1:network2", "cross_density_network_covariate2_network1:network2"))
+
+  updated_model_obj <- update_covar(model_obj, layer_1 = "network2", layer_2 = "network1", cross_reciprocity = c("network_covariate1","network_covariate2"), receiver = c("actor_attr2"))
+
+    expect_equal(names(updated_model_obj$model$covar), c("cross_reciprocity_network_covariate1_network1:network2", "cross_reciprocity_network_covariate2_network1:network2"))
+})
+
+test_that("update_covar returns an error when layer is not found", {
+  # Create a dummy Mp2Model object
+  model_obj <- m_empty
+  # Update covariates for a non-existent layer
+  expect_error(update_covar(model_obj, layer_1 = "layer4", density = c("covar1")))
+})
+
+test_that("update_covar returns an error when covariate is not found", {
+    model_obj <- m_empty
+  # Update covariates with a non-existent covariate
+  expect_error(update_covar(model_obj, layer_1 = "network1", density = c("covar4")))
+})
+
+
+
+# Test for baseline parameter with mean and sd
+test_that("update_prior sets baseline parameter with mean and sd", {
+    model_obj <- m_empty_uni
+
+    updated_model_obj <- model_obj
+    expect_equal(as.vector(updated_model_obj$model$prior$rho_mean_prior), c(0))
+    updated_model_obj <- update_prior(updated_model_obj, "density", "baseline", mean = 10, sd = 0.5)
+    updated_model_obj <- update_prior(updated_model_obj, "reciprocity", "baseline", mean = 10, sd = 0.5)
+    expect_equal(as.vector(updated_model_obj$model$prior$rho_mean_prior), c(10))
+    expect_equal(as.vector(updated_model_obj$model$prior$mu_mean_prior), c(10))
+    expect_equal(as.vector(updated_model_obj$model$prior$rho_sd_prior), c(0.5))
+    expect_equal(as.vector(updated_model_obj$model$prior$mu_sd_prior), c(0.5))
+    
+    
+    model_obj <- m_empty
+
+    updated_model_obj <- model_obj
+    expect_equal(as.vector(updated_model_obj$model$prior$rho_mean_prior), c(0, 0))
+    updated_model_obj <- update_prior(updated_model_obj, "density", "baseline", layer_lab="network1", mean = 10, sd = 0.5)
+    updated_model_obj <- update_prior(updated_model_obj, "reciprocity", "baseline", mean = 10, sd = 0.5)
+    expect_equal(as.vector(updated_model_obj$model$prior$rho_mean_prior), c(10, 10))
+    expect_equal(as.vector(updated_model_obj$model$prior$mu_mean_prior), c(10, 0))
+    expect_equal(as.vector(updated_model_obj$model$prior$rho_sd_prior), c(0.5, 0.5))
+    expect_equal(as.vector(updated_model_obj$model$prior$mu_sd_prior), c(0.5, 10))
+})
+  
+
+# Test for random parameter with eta, alpha, and beta
+test_that("update_prior sets random parameter with eta, alpha, and beta", {
+    model_obj <- m_empty_uni
+
+    updated_model_obj <- model_obj
+    expect_equal(updated_model_obj$model$prior$LJK_eta_prior, 2)
+    expect_equal(updated_model_obj$model$prior$scale_alpha_prior, 3)
+    expect_equal(updated_model_obj$model$prior$scale_beta_prior, 50)
+    updated_model_obj <- update_prior(updated_model_obj, "LKJ", "random", eta = 0.5, beta = 0.9)
+    expect_equal(updated_model_obj$model$prior$LJK_eta_prior, 0.5)
+    expect_equal(updated_model_obj$model$prior$scale_alpha_prior, 3)
+    expect_equal(updated_model_obj$model$prior$scale_beta_prior, 0.9)
+
+    model_obj <- m_empty
+
+    updated_model_obj <- model_obj
+    expect_equal(updated_model_obj$model$prior$LJK_eta_prior, 2)
+    expect_equal(updated_model_obj$model$prior$scale_alpha_prior, 3)
+    expect_equal(updated_model_obj$model$prior$scale_beta_prior, 50)
+    updated_model_obj <- update_prior(updated_model_obj, "LKJ", "random", eta = 0.5, beta = 0.9)
+    expect_equal(updated_model_obj$model$prior$LJK_eta_prior, 0.5)
+    expect_equal(updated_model_obj$model$prior$scale_alpha_prior, 3)
+    expect_equal(updated_model_obj$model$prior$scale_beta_prior, 0.9)
+})
+
+# Test for covariate parameter with mean and sd
+test_that("update_prior sets covariate parameter with mean and sd", {
+    model_obj <- m_empty_uni
+    model_obj <- update_covar(model_obj, layer_1 = "network1", density = c("network_covariate1", "network_covariate2"), receiver = c("actor_attr2"))
+    updated_model_obj <- model_obj
+    updated_model_obj <- update_prior(model_obj, "density", "covariate", covar_lab = "network_covariate1", mean = 10, sd = 0.5)
+    expect_equal(updated_model_obj$model$covar$density_network_covariate1_network1$mean_prior, 10)
+    expect_equal(updated_model_obj$model$covar$density_network_covariate1_network1$sd_prior, 0.5)
+
+    model_obj <- m_empty
+    model_obj <- update_covar(model_obj, layer_1 = "network1", density = c("network_covariate1", "network_covariate2"), receiver = c("actor_attr2"))
+    model_obj <- update_covar(model_obj, layer_1 = "network1", layer_2="network2", cross_density = c("network_covariate1", "network_covariate2"))
+    updated_model_obj <- model_obj
+    updated_model_obj <- update_prior(updated_model_obj, "density", "covariate", covar_lab = "network_covariate1", layer_lab="network1", mean = 10, sd = 0.5)
+    expect_equal(updated_model_obj$model$covar$density_network_covariate1_network1$mean_prior, 10)
+    expect_equal(updated_model_obj$model$covar$density_network_covariate1_network1$sd_prior, 0.5)
+    fitted_model <- fit(updated_model_obj, iter = 10, chains = 1, refresh=0)
+
+})
+
+
+
+
+## tests for fit.Mp2Model
+# Test the fit function
+test_that("fit function performs estimation using Stan for empty uniplex and multiplex models", {
+  model_obj <- m_empty_uni
+  fitted_model <- fit(model_obj, iter=10, chains=1, refresh=0)
+  expect_true(class(fitted_model) == "Mp2Model")
+  
+  # Check if the fitted_model contains the fitted Stan model and parameter labels
+  expect_true(!is.null(fitted_model$fit_res$stan_fit))
+  expect_true(!is.null(fitted_model$fit_res$par_labels))
+
+  model_obj <- m_empty
+  fitted_model <- fit(model_obj, iter=10, chains=1, refresh=0)
+  fitted_model <- fit(model_obj, iter=10, chains=1, refresh=0)
+  fitted_model <- fit(model_obj, iter=10, chains=1, refresh=0)
+  expect_true(class(fitted_model) == "Mp2Model")
+
+
+
+
+  
+  # Check if the fitted_model contains the fitted Stan model and parameter labels
+  expect_true(!is.null(fitted_model$fit_res$stan_fit))
+  expect_true(!is.null(fitted_model$fit_res$par_labels))
+})
+
+# Test for covariate parameter with mean and sd
+test_that("update_prior sets covariate parameter with mean and sd after fitting", {
+  
+    model_obj <- m_empty
+  
+  
+    model_obj <- update_covar(model_obj, layer_1 = "network1", density = c("network_covariate1", "network_covariate2"), receiver = c("actor_attr2"))
+    model_obj <- update_covar(model_obj, layer_1 = "network1", layer_2="network2", cross_density = c("network_covariate1", "network_covariate2"))
+    updated_model_obj <- model_obj
+    updated_model_obj <- update_prior(updated_model_obj, "density", "covariate", covar_lab = "network_covariate1", layer_lab="network1", mean = 10, sd = 0.5)
+    expect_equal(updated_model_obj$model$covar$density_network_covariate1_network1$mean_prior, 10)
+    expect_equal(updated_model_obj$model$covar$density_network_covariate1_network1$sd_prior, 0.5)
+    fitted_model <- fit(updated_model_obj, iter=10, chains=1, refresh=0)
+    expect_true(!is.null(fitted_model$model$full_prior))
+    expect_true(fitted_model$model$full_prior$mu_covariates_mean_prior["density_network_covariate1_network1"] == 10)
+    expect_true(fitted_model$model$full_prior$mu_covariates_sd_prior["density_network_covariate1_network1"] == 0.5)
+    expect_true(fitted_model$model$full_prior$beta_covariates_mean_prior["receiver_actor_attr2_network1"] == 0)
+    expect_true(fitted_model$model$full_prior$beta_covariates_sd_prior["receiver_actor_attr2_network1"] == 10/sd(fitted_model$data$actor_covar$actor_attr2))
+
+})
+
