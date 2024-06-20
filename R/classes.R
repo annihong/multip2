@@ -8,7 +8,7 @@
 #' @param dyad_covar A list of matrices representing the dyadic covariates (optional), logical or numeric, but not NA.
 #' @param actor_covar A data frame representing the actor covariates (optional), logical or numeric, but not NA.
 #' @return A new Mp2Model object representing the empty model.
-#' @details This function creates a default empty model for MultiP2 analysis. It takes in the dependent network, dyadic covariates, and actor covariates (optional) as input. The function checks the validity of the input arguments and returns a new Mp2Model object with the specified attributes.
+#' @details This function creates a default empty model for multip2 analysis. It takes in the dependent network, dyadic covariates, and actor covariates (optional) as input. The function checks the validity of the input arguments and returns a new Mp2Model object with the specified attributes.
 #' @examples
 #' #not run
 #' #model <- Mp2Model(dep_net, dyad_covar, actor_covar)
@@ -255,7 +255,7 @@ fit <- function(model_obj, ...) {
 #' @export
 fit.Mp2Model <- function(model_obj, chains = 4, iter = 200, warmup = floor(iter/2),
                      thin = 1, seed = sample.int(.Machine$integer.max, 1),
-                    prior_sim = FALSE,mc.cores = parallel::detectCores(), auto_write = TRUE, stan_file = "multiplex_p2_low_mem.stan", refresh = 1) {
+                    prior_sim = FALSE,mc.cores = parallel::detectCores(), auto_write = TRUE, stan_file = "multiplex_p2_low_mem.stan", ...) {
 
     model_obj <- create_stan_data(model_obj)
     model_obj$fit_res$stan_data$prior_sim = prior_sim
@@ -264,7 +264,7 @@ fit.Mp2Model <- function(model_obj, chains = 4, iter = 200, warmup = floor(iter/
     options(mc.cores =mc.cores)
     rstan::rstan_options(auto_write = auto_write)
     
-    fpath <- system.file("stan", stan_file, package="MultiP2")
+    fpath <- system.file("stan", stan_file, package="multip2")
     p2_fit <- rstan::stan(
                     file=fpath, 
                     data = stan_data,
@@ -273,7 +273,7 @@ fit.Mp2Model <- function(model_obj, chains = 4, iter = 200, warmup = floor(iter/
                     warmup = warmup,
                     thin = thin,
                     seed = seed, 
-                    refresh = refresh
+                    ...
                     )
     model_obj$fit_res$stan_fit <- p2_fit
     s <- create_summary(model_obj)

@@ -20,7 +20,7 @@ A new Mp2Model object representing the empty model.
 This function creates an empty model of the class Mp2Model.
 }
 \details{
-This function creates a default empty model for MultiP2 analysis. It takes in the dependent network, dyadic covariates, and actor covariates (optional) as input. The function checks the validity of the input arguments and returns a new Mp2Model object with the specified attributes.
+This function creates a default empty model for multip2 analysis. It takes in the dependent network, dyadic covariates, and actor covariates (optional) as input. The function checks the validity of the input arguments and returns a new Mp2Model object with the specified attributes.
 }
 \examples{
 #not run

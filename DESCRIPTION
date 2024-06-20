@@ -4,7 +4,7 @@ Version: 0.0.0.9000
 Authors@R: 
     person("Anni", "Hong", , "annihong@andrew.cmu.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-6562-9334"))
-Description: Multiplex extension to the p2 (van Duijn et al., 2004) model that model cross-layer dyadic dependencies as fixed effects and actor-specific dependencies as random effects, while also considering the influence of covariates in the analysis of cross-sectional, directed binary multiplex network data. 
+Description: Multiplex extension to the p2 (van Duijn et al., 2004) model which includes cross-layer dyadic dependencies as fixed effects and actor-specific dependencies as random effects. The influence of covariates are also considered in the analysis of cross-sectional, directed binary multiplex network data. 
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -21,8 +21,10 @@ Imports:
     parallel,
     rstan,
     stats,
-    network,
-    igraph
+    igraph,
+    gridExtra,
+    lattice,
+    reshape2
 Depends: 
     R (>= 2.10)
 LazyData: true

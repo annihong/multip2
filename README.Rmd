@@ -15,28 +15,24 @@ knitr::opts_chunk$set(
 
 # multip2
 
-<!-- badges: start -->
-<!-- badges: end -->
+The multip2 package provides a Bayesian implementation of the multiplex extension (Hong & Niezink, 2024) to the p2 (van Duijn et al., 2004) model which includes cross-layer dyadic dependencies as fixed effects and actor-specific dependencies as random effects. The influence of covariates are also considered in the analysis of cross-sectional, directed binary multiplex network data. 
 
-The goal of multip2 is to ...
-
+You can read more about the multiplex p2 model in the following paper: [The Multiplex p2 Model: Mixed-Effects Modeling for Multiplex Social Networks](https://arxiv.org/abs/2405.17707)
 ## Installation
 
 You can install the development version of multip2 from [GitHub](https://github.com/) with:
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("annihong/multip2")
+install.packages("remotes")
+remotes::install_github("annihong/multip2")
 
 ```
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
-
 ```{r example, eval=FALSE}
 library(multip2)
-#networks = replicate(4, matrix(data=sample(c(0,1), 9, replace=TRUE), nrow=3), simplify = FALSE)
+
 n = 5
 networks = replicate(4, matrix(data=sample(c(0,1), n^2, replace=TRUE, prob=c(0.7,0.3)), nrow=n), simplify = FALSE) #self loops are ignored
 names(networks) <-  c("network1", "network2", "network_covariate1",      "network_covariate2")
@@ -45,17 +41,13 @@ actor_data = data.frame(actor_attr1=1:n, actor_attr2=1:n)
 dep_net <- networks[c("network1", "network2")]
 dyad_covar <- networks[c("network_covariate1", "network_covariate2")]
 actor_covar <- actor_data[c("actor_attr1", "actor_attr2")]
+
 m_empty <- Mp2Model(dep_net, dyad_covar = dyad_covar, actor_covar = actor_data)
 m_empty_res <- fit(m_empty, iter=200, prior_sim=T)
-sim_nets <- extract_network_draws(m_empty_res, 200)
-simulated_network_checks(sim_nets, m_empty_res, "multiplex_gof_random")
+# sim_nets <- extract_network_draws(m_empty_res, 200)
+# simulated_network_checks(sim_nets, m_empty_res, "multiplex_gof_random")
 
-# m <- add_covar(m, "network_covariate2", "density",layer_lab = "network1")
-# m <- add_covar(m,  "network_covariate2", "density",  layer_lab = "network1")
-# m <- add_covar(m,  "network_covariate2", "reciprocity")
-# m <- add_covar(m,  "network_covariate1", "cross_density")
-# #m <- add_covar(m,  "actor_attr2", "cross_density")
-# m <- add_covar(m,  "actor_attr2", "receiver")
+
 m <- m_empty
 m <- update_covar(m, layer_1 = "network1", density = c("network_covariate2", "network_covariate1"), reciprocity = c("network_covariate2"), receiver = "actor_attr2")
 m <- update_covar(m, layer_1 = "network2", density = c("network_covariate2", "network_covariate1"), reciprocity = "network_covariate2", sender = "actor_attr1")
@@ -81,19 +73,3 @@ m_empty <- Mp2Model(dep_net, dyad_covar = dyad_covar, actor_covar = actor_data)
 m_empty_res <- fit(m_empty, iter=10, prior_sim=TRUE)
 m_empty_res <- fit(m_empty, iter=10, prior_sim=FALSE)
 ```
-
-What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:
-
-```{r cars}
-summary(cars)
-```
-
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this. You could also use GitHub Actions to re-render `README.Rmd` every time you push. An example workflow can be found here: <https://github.com/r-lib/actions/tree/v1/examples>.
-
-You can also embed plots, for example:
-
-```{r pressure, echo = FALSE}
-plot(pressure)
-```
-
-In that case, don't forget to commit and push the resulting figure files, so they display on GitHub and CRAN.

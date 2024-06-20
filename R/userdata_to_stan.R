@@ -1,64 +1,64 @@
-#' Helper method to create covariates for a multiplex p2 model
-#'
-#' This function creates a list of covariates to be used in formate_covariates function. It assumes that all the same covariates are used for each layer of the multiplex network. 
-#'
-#' @param t An integer indicating the number of layers of networks.
-#' @param H An integer indicating the number of pairs of layers in the multiplex network.
-#' @param covars A list containing the names of the covariates to include.
-#' @param outcome A character string indicating the names of the layers of the multiplex network.
-#' @param network_data A list containing the network data.
-#' @param actor_data A list containing the actor data.
-#' @return A list of covariates of the form covariates = list(is_within = {T, F}, t_or_h, var_name, value) to be used in the format_covariates function.
-covariates_helper <- function(t, H, covars, outcome, network_data, actor_data) {
-    create_covar <- function(var_name, t_or_h, is_within, value) {
-        return(list(var_name=var_name, t_or_h=t_or_h, is_within=is_within, value=value))
-    }
-    covariates = list()
-    pair_names <- get_pair_names(outcome)
-    var_name = "sender"
-    for (covar in covars[[var_name]]) {
-        res = lapply(1:t, create_covar, var_name=var_name, is_within=TRUE, value=actor_data[covar])
-        names(res) = paste(var_name, covar, outcome, sep="_")
-        covariates = append(covariates, res)
-    }
+# #' Helper method to create covariates for a multiplex p2 model
+# #'
+# #' This function creates a list of covariates to be used in formate_covariates function. It assumes that all the same covariates are used for each layer of the multiplex network. 
+# #'
+# #' @param t An integer indicating the number of layers of networks.
+# #' @param H An integer indicating the number of pairs of layers in the multiplex network.
+# #' @param covars A list containing the names of the covariates to include.
+# #' @param outcome A character string indicating the names of the layers of the multiplex network.
+# #' @param network_data A list containing the network data.
+# #' @param actor_data A list containing the actor data.
+# #' @return A list of covariates of the form covariates = list(is_within = {T, F}, t_or_h, var_name, value) to be used in the format_covariates function.
+# covariates_helper <- function(t, H, covars, outcome, network_data, actor_data) {
+#     create_covar <- function(var_name, t_or_h, is_within, value) {
+#         return(list(var_name=var_name, t_or_h=t_or_h, is_within=is_within, value=value))
+#     }
+#     covariates = list()
+#     pair_names <- get_pair_names(outcome)
+#     var_name = "sender"
+#     for (covar in covars[[var_name]]) {
+#         res = lapply(1:t, create_covar, var_name=var_name, is_within=TRUE, value=actor_data[covar])
+#         names(res) = paste(var_name, covar, outcome, sep="_")
+#         covariates = append(covariates, res)
+#     }
 
-    var_name = "receiver"
-    for (covar in covars[[var_name]]) {
-        res = lapply(1:t, create_covar, var_name=var_name, is_within=TRUE, value=actor_data[covar])
-        names(res) = paste(var_name, covar, outcome, sep="_")
-        covariates = append(covariates, res)
-    }
+#     var_name = "receiver"
+#     for (covar in covars[[var_name]]) {
+#         res = lapply(1:t, create_covar, var_name=var_name, is_within=TRUE, value=actor_data[covar])
+#         names(res) = paste(var_name, covar, outcome, sep="_")
+#         covariates = append(covariates, res)
+#     }
 
-    var_name = "density"
-    for (covar in covars[[var_name]]) {
-        res = lapply(1:t, create_covar, var_name=var_name, is_within=TRUE, value=network_data[[covar]])
-        names(res) = paste(var_name, covar, outcome, sep="_")
-        covariates = append(covariates, res)
-    }
+#     var_name = "density"
+#     for (covar in covars[[var_name]]) {
+#         res = lapply(1:t, create_covar, var_name=var_name, is_within=TRUE, value=network_data[[covar]])
+#         names(res) = paste(var_name, covar, outcome, sep="_")
+#         covariates = append(covariates, res)
+#     }
 
-    var_name = "reciprocity"
-    for (covar in covars[[var_name]]) {
-        res = lapply(1:t, create_covar, var_name=var_name, is_within=TRUE, value=network_data[[covar]])
-        names(res) = paste(var_name, covar, outcome, sep="_")
-        covariates = append(covariates, res)
-    }
+#     var_name = "reciprocity"
+#     for (covar in covars[[var_name]]) {
+#         res = lapply(1:t, create_covar, var_name=var_name, is_within=TRUE, value=network_data[[covar]])
+#         names(res) = paste(var_name, covar, outcome, sep="_")
+#         covariates = append(covariates, res)
+#     }
 
-    var_name = "cross_density"
-    for (covar in covars[[var_name]]) {
-        res = lapply(1:H, create_covar, var_name=var_name, is_within=FALSE, value=network_data[[covar]])
-        names(res) = paste(var_name, covar, pair_names, sep="_")
-        covariates = append(covariates, res)
-    }
+#     var_name = "cross_density"
+#     for (covar in covars[[var_name]]) {
+#         res = lapply(1:H, create_covar, var_name=var_name, is_within=FALSE, value=network_data[[covar]])
+#         names(res) = paste(var_name, covar, pair_names, sep="_")
+#         covariates = append(covariates, res)
+#     }
 
-    var_name = "cross_reciprocity"
-    for (covar in covars[[var_name]]) {
-        res = lapply(1:H, create_covar, var_name=var_name, is_within=FALSE, value=network_data[[covar]])
-        names(res) = paste(var_name, covar, pair_names, sep="_")
-        covariates = append(covariates, res)
-    }
+#     var_name = "cross_reciprocity"
+#     for (covar in covars[[var_name]]) {
+#         res = lapply(1:H, create_covar, var_name=var_name, is_within=FALSE, value=network_data[[covar]])
+#         names(res) = paste(var_name, covar, pair_names, sep="_")
+#         covariates = append(covariates, res)
+#     }
 
-    return(covariates)
-}
+#     return(covariates)
+# }
 
 #' Format covariates data for stan estimation
 #' 
