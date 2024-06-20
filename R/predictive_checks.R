@@ -409,7 +409,6 @@ simulated_network_checks <- function(sim_nets, dep_net, network_statistics, laye
 #' @export
 gof_plot <- function (sim_stat_res, net_lab, center=FALSE, scale=FALSE, violin=TRUE, key=NULL, perc=.05, position=4, fontsize=12, ...)
 {
-	## require(lattice)
     args <- list(...)
 	if (is.null(args$main)){
 		main=paste("Goodness of Fit of",
