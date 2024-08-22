@@ -295,9 +295,10 @@ create_summary <- function(model_obj) {
     stan_data = model_obj$fit_res$stan_data
     p2_fit = model_obj$fit_res$stan_fit
     fixed_summary <- make_fixed_summary(p2_fit, stan_data, dep_lab, pair_lab)
-    random_summary <- make_random_summary(p2_fit, dep_lab)         
-    summary <- list("fixed" = fixed_summary$summary, "random" = random_summary$summary)
-    par_labels <- rbind(fixed_summary$par_labels, random_summary$par_labels)
+    correlation_summary <- make_correlation_summary(p2_fit, dep_lab)
+    scale_sigma_summary <- make_scale_sigma_summary(p2_fit, dep_lab)         
+    summary <- list("fixed" = fixed_summary$summary, "correlation" = correlation_summary$summary, "sigma" = scale_sigma_summary$summary)
+    par_labels <- rbind(fixed_summary$par_labels, correlation_summary$par_labels, scale_sigma_summary$par_labels)
     rownames(par_labels) <- NULL
     return(list(summary = summary, par_labels = par_labels))
 }
@@ -381,9 +382,9 @@ print.Mp2Model <- function(model_obj, ...) {
 #' 
 #' @param fit rstan fit object: fitted stan object
 #' @param pattern string: a regex pattern corresponding to the desired parameters, 
-#' default is "^mu|^rho|^cross|fixed", which are all the fixed parameters
+#' default is "^PS_mu|^rho|^cross|fixed", which are all the fixed parameters
 #' @return a matrix of the model output summary of the specified parameters
-extract_model_info <- function(fit, pattern = "^mu|^rho|^cross|fixed") {
+extract_model_info <- function(fit, pattern = "^PS_mu|^rho|^cross|fixed") {
   s <- rstan::summary(fit)$summary
   res <- s[grep(pattern,rownames(s)),1:10]
   return(res)
@@ -408,11 +409,11 @@ make_fixed_summary <- function(fit, stan_data, outcome, pairs) {
     return(res)
     }
 
-    pattern = "^mu|^rho|^cross|fixed"
+    pattern = "^PS_mu|^rho|^cross|fixed"
     res = extract_model_info(fit=fit, pattern=pattern)
     old_names <- rownames(res)
 
-    res <- rename_covar(res=res, pattern="^mu.*fixed|^rho.*fixed|^cross_mu.*fixed|^cross_rho.*fixed",
+    res <- rename_covar(res=res, pattern="^PS_mu.*fixed|^rho.*fixed|^cross_mu.*fixed|^cross_rho.*fixed",
         param_names=c("mu_covariates", "rho_covariates", "cross_mu_covariates", "cross_rho_covariates"),
         get_name_func=function(covar) dimnames(stan_data[[covar]])[[3]]
                         )
@@ -425,7 +426,7 @@ make_fixed_summary <- function(fit, stan_data, outcome, pairs) {
     row_names <- rownames(res)
     # outcome <- attr(x, "outcome")
     # pairs <- attr(x, "pair_names")
-    mu_idx <- grep("^mu\\[\\d\\]", row_names, perl = T)
+    mu_idx <- grep("^PS_mu\\[\\d\\]", row_names, perl = T)
     rho_idx <- grep("^rho\\[\\d\\]", row_names, perl = T)
     cross_mu_idx <- grep("^cross_mu\\[\\d\\]", row_names, perl = T)
     cross_rho_idx <- grep("^cross_rho\\[\\d\\]", row_names, perl = T)
@@ -444,18 +445,19 @@ make_fixed_summary <- function(fit, stan_data, outcome, pairs) {
 #' 
 #' @param fit rstan fit object: fitted stan object
 #' @param outcome vector: the "outcome" attribute of the Mp2Model object, names of the layers of the multiplex network
-#' @return a matrix of the model output summary of the random parameters (the estimated variance-covariance matrix)
-make_random_summary <- function(fit, outcome) {
+#' @return a matrix of the model output summary of the random parameters (the estimated correlation matrix)
+make_correlation_summary <- function(fit, outcome) {
     #extract all the entries of the varcov matrix from the p2 fit 
-    sigma_raw <- extract_model_info(fit, pattern="Sigma")
-    old_names <- rownames(sigma_raw)
+    scale_sigma <- extract_model_info(fit, pattern="sigma")
+    corr_raw <- extract_model_info(fit, pattern="Corr")
+    old_names <- rownames(corr_raw)
     #names of the actor vars 
     new_names <- c(outer(c("sender:", "receiver:"),outcome, FUN=paste0))
-    res <- sigma_raw
-    for (name in rownames(sigma_raw)) {
+    res <- corr_raw
+    for (name in rownames(corr_raw)) {
         name_string = strsplit(name, "")[[1]]
-        row = name_string[7]
-        col = name_string[9]
+        row = name_string[6] #row index
+        col = name_string[8] #column index
         #remove all the repeated entries because the var-covar matrix is symmetrical 
         if (row > col) {
             res = res[-which(rownames(res) == name),]
@@ -464,8 +466,8 @@ make_random_summary <- function(fit, outcome) {
 
     rename_sigma <- function(name) {
         name_string = strsplit(name, "")[[1]]
-        row = name_string[7]
-        col = name_string[9]
+        row = name_string[6] #row index
+        col = name_string[8] #column index
         new_name <- paste(new_names[as.numeric(row)], new_names[as.numeric(col)], sep = "_")
         return(new_name)
     }
@@ -474,6 +476,23 @@ make_random_summary <- function(fit, outcome) {
     P <- data.frame(
     Parameter = old_names,
     Label = sapply(old_names, rename_sigma))
+    return(list("summary" = res, "par_labels" = P))
+}
+
+make_scale_sigma_summary <- function(fit, outcome) {
+    scale_sigma <- extract_model_info(fit, pattern="sigma")
+    new_names <- c(outer(c("sender:", "receiver:"),outcome, FUN=paste0))
+    old_names <- rownames(scale_sigma)
+    res <- scale_sigma
+
+    for (idx in 1:nrow(scale_sigma)) {
+        new_name <- paste(new_names[idx], "sigma", sep = "_")
+        rownames(res)[idx] <- new_name
+    }
+
+    P <- data.frame(
+    Parameter = old_names,
+    Label = rownames(scale_sigma))
     return(list("summary" = res, "par_labels" = P))
 }
 

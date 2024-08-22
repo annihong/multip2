@@ -261,15 +261,27 @@ model {
 generated quantities{
   int y_tilde[N];
   cov_matrix[2*T] Sigma;
+  corr_matrix[2*T] Corr;
   matrix[N,K] x_beta;
+  matrix[n,2*T] C;
+  vector[T] PS_mu; //post sweep mu for identifiability
+  vector[T] A_bar; //average of Ai
+  vector[T] B_bar; //average of Bi
+
+  C = (diag_pre_multiply(sigma, L_corr) * z)';
+  for (t in 1:T){
+    A_bar[t] = mean(C[,1 + 2 * (t - 1)]);
+    B_bar[t] = mean(C[,2 + 2 *(t - 1)]);
+    PS_mu[t] = mu[t] - A_bar[t] - B_bar[t];
+  }
   Sigma = diag_pre_multiply(sigma, L_corr) * diag_pre_multiply(sigma, L_corr)';
-  
+  Corr = multiply_lower_tri_self_transpose(L_corr);
 
   // start of the x_beta calculation
   
   {
     
-    matrix[n,2*T] C; // for each actor, there are 2 * T number of random actor effects (two per network)
+    // matrix[n,2*T] C; // for each actor, there are 2 * T number of random actor effects (two per network)
     matrix[n,T] alpha;
     matrix[n,T] beta;
     real mu_ij = 0;
@@ -280,7 +292,7 @@ generated quantities{
     vector[n] alpha_fixed = rep_vector(0,n);
     vector[n] beta_fixed = rep_vector(0,n);
   
-    C = (diag_pre_multiply(sigma, L_corr) * z)';
+    // C = (diag_pre_multiply(sigma, L_corr) * z)';
     for (t in 1:T){
       int idx_a[2] = find_start_end(D_within[,3],t);
       int idx_b[2] = find_start_end(D_within[,4],t);
