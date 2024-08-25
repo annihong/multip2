@@ -1,0 +1,105 @@
+2024-08-23 14:25:23.190811
+There are a total of 10 simulations, and # iterations = 200 Let's hope for the best!hydra: 3
+prior info: eta = 2, shape = 3, scale= 50
+we are on iteration 1 hydra: 3
+we are on iteration 2 hydra: 3
+we are on iteration 3 hydra: 3
+we are on iteration 4 hydra: 3
+we are on iteration 5 hydra: 3
+we are on iteration 6 hydra: 3
+we are on iteration 7 hydra: 3
+we are on iteration 8 hydra: 3
+we are on iteration 9 hydra: 3
+we are on iteration 10 hydra: 3
+2024-08-23 18:37:32.09535
+There are a total of 10 simulations, and # iterations = 200 Let's hope for the best!hydra: 3
+prior info: eta = 2, shape = 3, scale= 50
+we are on iteration 1 hydra: 3
+we are on iteration 2 hydra: 3
+we are on iteration 3 hydra: 3
+we are on iteration 4 hydra: 3
+we are on iteration 5 hydra: 3
+we are on iteration 6 hydra: 3
+we are on iteration 7 hydra: 3
+we are on iteration 8 hydra: 3
+we are on iteration 9 hydra: 3
+we are on iteration 10 hydra: 3
+2024-08-23 18:48:49.584485
+There are a total of 10 simulations, and # iterations = 200 Let's hope for the best!hydra: 3
+prior info: eta = 2, shape = 3, scale= 50
+we are on iteration 1 hydra: 3
+we are on iteration 2 hydra: 3
+we are on iteration 3 hydra: 3
+we are on iteration 4 hydra: 3
+we are on iteration 5 hydra: 3
+we are on iteration 6 hydra: 3
+we are on iteration 7 hydra: 3
+we are on iteration 8 hydra: 3
+we are on iteration 9 hydra: 3
+The simulated network is NA...
+we are on iteration 10 hydra: 3
+2024-08-23 18:51:24.566387
+There are a total of 10 simulations, and # iterations = 200 Let's hope for the best!hydra: 3
+prior info: eta = 2, shape = 3, scale= 50
+2024-08-23 18:51:27.528681
+There are a total of 10 simulations, and # iterations = 200 Let's hope for the best!hydra: 3
+prior info: eta = 2, shape = 3, scale= 50
+2024-08-23 19:07:15.51742
+There are a total of 10 simulations, and # iterations = 200 Let's hope for the best!hydra: 3
+prior info: eta = 2, shape = 3, scale= 50
+2024-08-23 19:12:29.766045
+There are a total of 10 simulations, and # iterations = 20 Let's hope for the best!hydra: 3
+prior info: eta = 2, shape = 3, scale= 50
+2024-08-23 19:17:47.758446
+There are a total of 10 simulations, and # iterations = 20 Let's hope for the best!hydra: 3
+prior info: eta = 2, shape = 3, scale= 50
+we are on iteration 1 hydra: 3
+we are on iteration 2 hydra: 3
+we are on iteration 3 hydra: 3
+we are on iteration 4 hydra: 3
+we are on iteration 5 hydra: 3
+we are on iteration 6 hydra: 3
+we are on iteration 7 hydra: 3
+we are on iteration 8 hydra: 3
+we are on iteration 9 hydra: 3
+we are on iteration 10 hydra: 3
+2024-08-23 19:23:44.260806
+There are a total of 10 simulations, and # iterations = 20 Let's hope for the best!hydra: 3
+prior info: eta = 2, shape = 3, scale= 50
+2024-08-25 17:22:28.880076
+There are a total of 10 simulations, and # iterations = 20 Let's hope for the best!hydra: 3
+prior info: eta = 2, shape = 3, scale= 50
+2024-08-25 17:31:09.73251
+There are a total of 10 simulations, and # iterations = 20 Let's hope for the best!hydra: 3
+prior info: eta = 2, shape = 3, scale= 50
+2024-08-25 17:48:34.003484
+There are a total of 10 simulations, and # iterations = 20 Let's hope for the best!hydra: 3
+prior info: eta = 2, shape = 3, scale= 50
+we are on iteration 1 hydra: 3
+we are on iteration 2 hydra: 3
+we are on iteration 3 hydra: 3
+we are on iteration 4 hydra: 3
+we are on iteration 5 hydra: 3
+we are on iteration 6 hydra: 3
+we are on iteration 7 hydra: 3
+we are on iteration 8 hydra: 3
+we are on iteration 9 hydra: 3
+we are on iteration 10 hydra: 3
+Simulated result saved! 
+we are on iteration 1 hydra: 3
+we are on iteration 2 hydra: 3
+we are on iteration 3 hydra: 3
+we are on iteration 4 hydra: 3
+we are on iteration 5 hydra: 3
+we are on iteration 6 hydra: 3
+we are on iteration 7 hydra: 3
+we are on iteration 8 hydra: 3
+we are on iteration 9 hydra: 3
+we are on iteration 10 hydra: 3
+2024-08-25 18:01:49.651051
+There are a total of 2 simulations, and # iterations = 20 Let's hope for the best!hydra: 3
+prior info: eta = 2, shape = 3, scale= 50
+we are on iteration 1 hydra: 3
+we are on iteration 2 hydra: 3
+Simulated result saved! 
+Simulated result saved! 
