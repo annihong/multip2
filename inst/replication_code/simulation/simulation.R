@@ -7,15 +7,16 @@ library(doSNOW)
 
 
 #PARALLEL INFO
-NUM_CORE = 16
-TOTAL_ITER = 10
-OUTPUT_PATH = "../simres/"
+NUM_CORE = 32
+TOTAL_ITER = 100
+OUTPUT_PATH = "/home/annihong/projects/simres/sim_res/"
 # RSTAN CONFIG:
-CHAINS = 4
+CHAINS = 2
 WARMUP = 500
 THIN = 1
-HYDRA = "M2"
-
+HYDRA = "G2"
+CURRENT = 198
+END_ITER = CURRENT + TOTAL_ITER - 1
 # NETWORK INFO: 
 n = 30
 t = 2
@@ -54,7 +55,7 @@ cl <- parallel::makeCluster(NUM_CORE)  # Create a cluster with 4 workers
 doSNOW::registerDoSNOW(cl)  # Register the cluster for use with foreach
 
 #results <- foreach(iter=1:TOTAL_ITER, .packages="rstan") %dopar% {
-results <- foreach(iter=1:TOTAL_ITER, .packages = "multip2") %dopar% {
+results <- foreach(iter=CURRENT:END_ITER, .packages = "multip2") %dopar% {
     cat(paste0("we are on iteration ", iter, " hydra: ",HYDRA, "\n"), file = "simulation_log.txt", append=T)
     Sigma <- multip2::sample_Sigma(eta, ig_shape, ig_scale, t)
     sampled_params <- multip2::sample_prior(n, t, mu_0, rho_0, cross_mu_0, cross_rho_0, Sigma)
@@ -68,18 +69,16 @@ results <- foreach(iter=1:TOTAL_ITER, .packages = "multip2") %dopar% {
     }
 
 
-    m_fit <- Mp2Model(M)
-    m_PS <- fit(m_fit, chains = CHAINS, warmup = WARMUP, thin = THIN, iter = WARMUP*2)
-    m_HC <- fit(m_fit, chains = CHAINS, warmup = WARMUP, thin = THIN, iter = WARMUP*2, stan_file = "multiplex_p2_HC.stan")
+    m_fit <- multip2::Mp2Model(M)
+    m_fit <-  multip2::fit(m_fit, chains = CHAINS, warmup = WARMUP, thin = THIN, iter = WARMUP*2)
 
 
-    sim_result <- list(sampled_params=sampled_params, m_PS = m_PS, m_HC = m_HC)
-    saveRDS(sim_result,file = paste0(OUTPUT_PATH,
-                                 "_comp_res_", iter, "_out_of_", TOTAL_ITER,".Rds"))
+    sim_result <- list(sampled_params=sampled_params,Mp2_fit = m_fit)
+    saveRDS(sim_result,file = paste0(OUTPUT_PATH, HYDRA,
+                                 "_", iter, "_out_of_", END_ITER, "draws = ", CHAINS * WARMUP, ".Rds"))
     cat(paste0("Simulated result saved! ","\n"), file = "simulation_log.txt", append=T)
     rm(sim_result)
-    rm(m_PS)
-    rm(m_HC)
+    rm(m_fit)
 }
 
 stopCluster(cl)

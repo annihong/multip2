@@ -7,17 +7,17 @@ library(doSNOW)
 
 
 #PARALLEL INFO
-NUM_CORE = 16
+NUM_CORE = 32
 TOTAL_ITER = 10
-OUTPUT_PATH = "../simres/"
+OUTPUT_PATH = "/home/annihong/projects/simres/"
 # RSTAN CONFIG:
 CHAINS = 4
-WARMUP = 200
+WARMUP = 100
 THIN = 1
-HYDRA = "M2"
+HYDRA = "G2"
 
 # NETWORK INFO: 
-n = 30
+n = 20
 t = 2
 H = t*(t - 1)/2
 
@@ -68,16 +68,18 @@ results <- foreach(iter=1:TOTAL_ITER, .packages = "multip2") %dopar% {
     }
 
 
-    m_fit <- Mp2Model(M)
-    m_fit <- fit(m_fit, chains = CHAINS, warmup = WARMUP, thin = THIN, iter = WARMUP*2)
+    m_fit <- multip2::Mp2Model(M)
+    m_PS <- multip2::fit(m_fit, chains = CHAINS, warmup = WARMUP, thin = THIN, iter = WARMUP*2)
+    m_HC <- multip2::fit(m_fit, chains = CHAINS, warmup = WARMUP, thin = THIN, iter = WARMUP*2, stan_file = "multiplex_p2_HC.stan")
 
 
-    sim_result <- list(sampled_params=sampled_params,Mp2_fit = m_fit)
+    sim_result <- list(sampled_params=sampled_params, m_PS = m_PS, m_HC = m_HC)
     saveRDS(sim_result,file = paste0(OUTPUT_PATH,
-                                 "_", iter, "_out_of_", TOTAL_ITER,".Rds"))
+                                 "_comp_res_", iter, "_out_of_", TOTAL_ITER,".Rds"))
     cat(paste0("Simulated result saved! ","\n"), file = "simulation_log.txt", append=T)
     rm(sim_result)
-    rm(m_fit)
+    rm(m_PS)
+    rm(m_HC)
 }
 
 stopCluster(cl)
