@@ -156,3 +156,17 @@ we are on iteration 8 hydra: M2
 we are on iteration 9 hydra: M2
 we are on iteration 10 hydra: M2
 we are on iteration 7 hydra: M2
+2024-08-29 20:09:21
+There are a total of 10 simulations, and # iterations = 200 Let's hope for the best!hydra: M2
+prior info: eta = 2, shape = 3, scale= 50
+we are on iteration 2 hydra: M2
+we are on iteration 7 hydra: M2
+we are on iteration 3 hydra: M2
+we are on iteration 1 hydra: M2
+we are on iteration 10 hydra: M2
+we are on iteration 8 hydra: M2
+we are on iteration 6 hydra: M2
+we are on iteration 4 hydra: M2
+we are on iteration 9 hydra: M2
+we are on iteration 5 hydra: M2
+Simulated result saved! 

@@ -1,8 +1,12 @@
 #load("../../results/sim_res_hydra6_num_sim_9_out_of_50.RData")
 
 library(multip2)
-path <- "/Users/annihong/Documents/Rprojects/simres"
-simulations <- list.files(path)
+path <- "/home/annihong/projects/simres/"
+simulations <- list.files(paste0(path, "sim_res/"))[1]
+length(simulations)
+#simulations <- grep("1000.Rds$", simulations, value = TRUE)
+
+
 #simulations <- simulations[grep("inv_gamma_hydra_5_.*_out_of_150", simulations)]
 #simulations <- simulations[grep("inv_gamma", simulations)]
 library(ggplot2)
@@ -32,8 +36,8 @@ rank_helper <- function(to_rank, vector){
 calc_stats <- function(sampled_params, posterior_draws, param, stat_func){
     prior_params <- sampled_params[[param]]
     draws <- posterior_draws[[param]]
-    print(param)
-    print(nrow(draws))
+    # print(param)
+    # print(nrow(draws))
     post_draws <- as.matrix(draws[sample(1:nrow(draws), 1000, replace=T),])
     stats <- c()
     for (i in 1:length(prior_params)) {
@@ -46,18 +50,17 @@ calc_stats <- function(sampled_params, posterior_draws, param, stat_func){
 }
 
 calc_stats_file <- function(simulation_file, solution){
-    file_path <- paste0(path, simulation_file)
+    file_path <- paste0(path, "sim_res/", simulation_file)
     #print(simulation_file)
     # e1 <- new.env(parent = baseenv())
     # load(file_path, envir = e1)
 
     sim_result <- readRDS(file_path)
+    stan_fit <- sim_result$Mp2_fit$fit_res$stan_fit
     sampled_params <- sim_result$sampled_params
     if (solution == "HC") {
-        stan_fit <- sim_result$m_HC$fit_res$stan_fit
         posterior_draws <- rstan::extract(stan_fit, c("mu", "rho", "cross_mu", "cross_rho"))
-    } else (solution == "PS"){
-        stan_fit <- sim_result$m_PS$fit_res$stan_fit
+    } else if (solution == "PS"){
         posterior_draws <- rstan::extract(stan_fit, c("PS_mu", "rho", "cross_mu", "cross_rho"))
     }
     
@@ -90,7 +93,7 @@ calc_stats_file <- function(simulation_file, solution){
 
 #  }
 
-res <- lapply(simulations, calc_stats_file, solution="HC")
+res <- lapply(simulations, calc_stats_file, solution="PS")
 rank_df <- data.frame()
 zscore_df <- data.frame()
 post_contract_df <- data.frame()
@@ -102,7 +105,8 @@ for (file_res in res) {
 
 colnames(rank_df) <- colnames(zscore_df) <- colnames(post_contract_df) <- names(res[[1]]$ranks)
 res=list(rank_df=rank_df, zscore_df=zscore_df, post_contract_df=post_contract_df)
-save(res, file="./sim_analysis_df_full.RData")
+save(res, file=paste0(path, "analysis_res/sim_analysis_df_full.RData"))
+load(paste0(path, "analysis_res/sim_analysis_df_full.RData"))
 
 # scale_fill_manual(values=c(rep("#fb8500", 2),  rep("#ffb703", 2), rep("#219ebc", 2), rep("#8ecae6", 2))) +
 
