@@ -2,7 +2,7 @@
 
 library(multip2)
 path <- "/home/annihong/projects/simres/"
-simulations <- list.files(paste0(path, "sim_res/"))[1]
+simulations <- list.files(paste0(path, "sim_res/"))
 length(simulations)
 #simulations <- grep("1000.Rds$", simulations, value = TRUE)
 

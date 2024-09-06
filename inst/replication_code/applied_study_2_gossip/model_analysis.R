@@ -1,18 +1,63 @@
 file_path <- "/home/annihong/projects/simres/fitted_models/"
+files <- grep("*_study_2_models.Rds", list.files(file_path), value=TRUE)
 
 ##LIBRARIES##
-require(tidyverse)
-require(ggmcmc)
-require(igraph)
-require(network)
-require(ergm)
-library(viridis)
-require(statnet.common)
+library(brms)
+library(dplyr)
+library(rstan)
 
+##FUNCTIONS##
+extract_model_info <- function(files, model_num, pattern = "^PS_mu|^rho|^cross|fixed") {
+    mean <- data.frame()
+    se <- data.frame()
+    rhat <- data.frame()
+    for (file in files) {
+        result <- readRDS(paste0(file_path, file))
+        if (model_num == 1) {
+            p2_fit <- result$m_1$fit_res$stan_fit
+        } else {
+            p2_fit <- result$m_2$fit_res$stan_fit
+        }
+        s <- rstan::summary(p2_fit)$summary
+        res <- s[grep(pattern,rownames(s)),1:10]
+        mean <- rbind.data.frame(mean, res[,1])
+        se <- rbind.data.frame(se,res[,2])
+        rhat <- rbind.data.frame(rhat,round(res[,10], 2))
+        colnames(mean) <- rownames(res)
+        colnames(se) <- rownames(res)
+        colnames(rhat) <- rownames(res)
+    }
+     return(list(mean=mean, se=se, rhat=rhat))
+}
 
-##READ IN DATA##
-results <- readRDS(paste0(file_path, "study_1_models.Rds"))
+aggregate_results <- function(model_res, priors, class = class_ids) {
+    params <- colnames(model_res$mean)
+    res <-list()
+    for (i in 1:length(params)) {
+        dat <- cbind.data.frame(mean = model_res$mean[,i], se = model_res$se[,i], class = class) 
+        print(mean(dat$mean))
+        m.brm <- brm(mean|se(se) ~ 1 + (1|class), data = dat, prior = priors, iter = 5000)
+        res[[params[i]]] <- summary(m.brm)$fixed
+    }
+    res <- as.data.frame(do.call(rbind, res))
+    return(res)
+}
 
+##META ANALYSIS##
+fixed_priors <- c(prior(normal(0,20), class = Intercept),
+            prior(cauchy(0,0.5), class = sd))
+
+cov_priors <- c(prior(normal(0,100), class = Intercept),
+            prior(cauchy(0,0.5), class = sd))
+
+model1fixed <- extract_model_info(files, 1)
+print(model1fixed$rhat)
+model2fixed <- extract_model_info(files, 2)
+print(model2fixed$rhat)
+model1Sigma <- extract_model_info(files, 1, "^Corr")
+print(model1Sigma$rhat)
+model2Sigma <- extract_model_info(files, 2, "^Corr")
+print(model2Sigma$rhat)
 
 
 ##LOAD IN THE STAN FIT OBJECTS##

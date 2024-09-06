@@ -1,7 +1,7 @@
 library(multip2)
-file_path <- "/Users/annihong/Documents/Rprojects/fitted_models/"
+file_path <- "/home/annihong/projects/simres/fitted_models/"
 
-WARMUP = 20
+WARMUP = 2000
 CHAINS = 4
 
 # load data
