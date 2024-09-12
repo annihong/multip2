@@ -255,12 +255,12 @@ fit <- function(model_obj, ...) {
 #' @export
 fit.Mp2Model <- function(model_obj, chains = 4, iter = 200, warmup = floor(iter/2),
                      thin = 1, seed = sample.int(.Machine$integer.max, 1),
-                    prior_sim = FALSE,mc.cores = parallel::detectCores(), auto_write = TRUE, stan_file = "multiplex_p2_low_mem.stan", ...) {
+                    prior_sim = FALSE, network_sim = TRUE, mc.cores = parallel::detectCores(), auto_write = TRUE, stan_file = "multiplex_p2_low_mem.stan", ...) {
 
     model_obj <- create_stan_data(model_obj)
     model_obj$fit_res$stan_data$prior_sim = prior_sim
+    model_obj$fit_res$stan_data$network_sim = network_sim
     stan_data = model_obj$fit_res$stan_data
-    # print(stan_data)
     options(mc.cores =mc.cores)
     rstan::rstan_options(auto_write = auto_write)
     
