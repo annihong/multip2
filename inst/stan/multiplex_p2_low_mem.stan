@@ -272,7 +272,7 @@ generated quantities{
   for (t in 1:T){
     A_bar[t] = mean(C[,1 + 2 * (t - 1)]);
     B_bar[t] = mean(C[,2 + 2 *(t - 1)]);
-    PS_mu[t] = mu[t] - A_bar[t] - B_bar[t];
+    PS_mu[t] = mu[t] + A_bar[t] + B_bar[t];
   }
   Sigma = diag_pre_multiply(sigma, L_corr) * diag_pre_multiply(sigma, L_corr)';
   Corr = multiply_lower_tri_self_transpose(L_corr);

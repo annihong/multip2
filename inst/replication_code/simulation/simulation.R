@@ -15,7 +15,7 @@ CHAINS = 2
 WARMUP = 500
 THIN = 1
 HYDRA = "G2"
-CURRENT = 398
+CURRENT = 498
 END_ITER = CURRENT + TOTAL_ITER - 1
 # NETWORK INFO: 
 n = 30
@@ -51,7 +51,7 @@ cat(paste0("prior info: eta = ", eta, ", shape = ", ig_shape, ", scale= ",ig_sca
 
    
 ########  END SIMULATING NETWORK FROM GROUND TRUTH #########
-cl <- parallel::makeCluster(NUM_CORE)  # Create a cluster with 4 workers
+cl <- parallel::makeCluster(NUM_CORE, outfile="LogSim.txt")  # Create a cluster with 4 workers
 doSNOW::registerDoSNOW(cl)  # Register the cluster for use with foreach
 
 #results <- foreach(iter=1:TOTAL_ITER, .packages="rstan") %dopar% {

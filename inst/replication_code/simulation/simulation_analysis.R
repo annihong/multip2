@@ -5,12 +5,15 @@ path <- "/home/annihong/projects/simres/"
 simulations <- list.files(paste0(path, "sim_res/"))
 length(simulations)
 #simulations <- grep("1000.Rds$", simulations, value = TRUE)
-
-
+MODE = "PS"
 #simulations <- simulations[grep("inv_gamma_hydra_5_.*_out_of_150", simulations)]
 #simulations <- simulations[grep("inv_gamma", simulations)]
 library(ggplot2)
 library(dplyr)
+PS_mu_prior <- read.csv(file = "/home/annihong/projects/simres/analysis_res/PS_mu_prior.csv")[,c(2,3)]
+v_PS_mu <- (sd(unlist(PS_mu_prior)))^2
+
+
 
 zscore_helper <- function(true_param, vector) {
     post_mean = mean(vector)
@@ -20,11 +23,12 @@ zscore_helper <- function(true_param, vector) {
     return(zscore)
 }
 
-post_contract_helper <- function(to_rank, vector) {
+post_contract_helper <- function(to_rank, vector, variance = 100) {
     post_sd = sd(vector)
-    post_contract = 1 - (post_sd^2)/(10^2)
+    post_contract = 1 - (post_sd^2)/variance
     return(post_contract)
 }
+
 
 rank_helper <- function(to_rank, vector){
     subsample <- sample(vector,100)
@@ -38,11 +42,24 @@ calc_stats <- function(sampled_params, posterior_draws, param, stat_func){
     draws <- posterior_draws[[param]]
     # print(param)
     # print(nrow(draws))
-    post_draws <- as.matrix(draws[sample(1:nrow(draws), 1000, replace=T),])
+    post_draws <- as.matrix(draws)
     stats <- c()
-    for (i in 1:length(prior_params)) {
-        prior_param = prior_params[[i]]
-        stat <- stat_func(prior_param, post_draws[,i])
+
+    for (t in 1:length(prior_params)) {
+        prior_param = prior_params[[t]]
+        if (MODE == "PS" & identical(stat_func, post_contract_helper) & param == "mu") {
+            # n = nrow(sampled_params$C)
+            # A_idx = 1 + 2 * (t - 1)
+            # B_idx = 2 + 2 * (t - 1)
+            # v_mu = 100 
+            # v_A = sampled_params$Sigma[A_idx, A_idx]
+            # v_B = sampled_params$Sigma[B_idx, B_idx]
+            # cov_AB = sampled_params$Sigma[A_idx, B_idx]
+            # v_PS_mu = v_mu + (1/n) * (v_A + v_B + 2 * cov_AB)
+            stat <- stat_func(prior_param, post_draws[,t], variance = v_PS_mu)
+        } else {
+            stat <- stat_func(prior_param, post_draws[,t])
+        }
         stats <- c(stats, stat)
     }
     names(stats) <- paste(param, 1:length(prior_params), sep = "_")
@@ -58,10 +75,17 @@ calc_stats_file <- function(simulation_file, solution){
     sim_result <- readRDS(file_path)
     stan_fit <- sim_result$Mp2_fit$fit_res$stan_fit
     sampled_params <- sim_result$sampled_params
-    if (solution == "HC") {
+    if (MODE == "OG") {
         posterior_draws <- rstan::extract(stan_fit, c("mu", "rho", "cross_mu", "cross_rho"))
-    } else if (solution == "PS"){
-        posterior_draws <- rstan::extract(stan_fit, c("PS_mu", "rho", "cross_mu", "cross_rho"))
+    } else if (MODE == "PS"){
+        posterior_draws <- rstan::extract(stan_fit, c("mu", "rho", "cross_mu", "cross_rho", "A_bar", "B_bar"))
+        PS_mu = posterior_draws$mu + posterior_draws$A_bar + posterior_draws$B_bar
+        posterior_draws$mu <- PS_mu
+        posterior_draws <- posterior_draws[c("mu", "rho", "cross_mu", "cross_rho")]
+        t_total = ncol(PS_mu)
+        A_bar_prior <- colMeans(sampled_params$C[,1 + 2*(1:t_total - 1)])
+        B_bar_prior <- colMeans(sampled_params$C[,2 + 2*(1:t_total - 1)])
+        sampled_params$mu <- sampled_params$mu + A_bar_prior + B_bar_prior 
     }
     
     
@@ -79,21 +103,8 @@ calc_stats_file <- function(simulation_file, solution){
     return(res)
 }
 
-#  calc_z_score <- function(sampled_params, posterior_draws, param_name){
-#         prior_param <- sampled_params[[param_name]]
-#         true_param <- rep(0, length(prior_param))
-#         post_draws <- posterior_draws[,
-#         grep(paste0("^", param_name), colnames(posterior_draws))]
-#         if (length(prior_param) > 1) {
-#             ranks <- purrr::map2(prior_param, post_draws, rank_helper)
-#         } else {
-#         ranks <- rank_helper(prior_param, post_draws)
-#         }
-#         return(ranks)
 
-#  }
-
-res <- lapply(simulations, calc_stats_file, solution="PS")
+res <- lapply(simulations, calc_stats_file)
 rank_df <- data.frame()
 zscore_df <- data.frame()
 post_contract_df <- data.frame()
@@ -105,22 +116,20 @@ for (file_res in res) {
 
 colnames(rank_df) <- colnames(zscore_df) <- colnames(post_contract_df) <- names(res[[1]]$ranks)
 res=list(rank_df=rank_df, zscore_df=zscore_df, post_contract_df=post_contract_df)
-save(res, file=paste0(path, "analysis_res/sim_analysis_df_full.RData"))
-load(paste0(path, "analysis_res/sim_analysis_df_full.RData"))
+save(res, file=paste0(path, "analysis_res/sim_analysis_df_full_", MODE, "_1.RData"))
+load(paste0(path, "analysis_res/sim_analysis_df_full_", MODE, "_1.RData"))
 
-# scale_fill_manual(values=c(rep("#fb8500", 2),  rep("#ffb703", 2), rep("#219ebc", 2), rep("#8ecae6", 2))) +
+rank_df <- res$rank_df
+zscore_df=res$zscore_df
+post_contract_df=res$post_contract_df
 
-# for (col in colnames(rank_df)) {
-#     rank_df[col] <- as.numeric(unlist(rank_df[col]))
-# } , y = after_stat(count / sum(count))
-#plot_rank <- 
 hist <- ggplot(tidyr::gather(rank_df)) + geom_histogram(aes(x=value/101, color = key), size = 1, breaks=seq(0,1,0.1)) +    
         facet_wrap(~key, ncol=6) + ylab("") + xlab("") +
         #scale_y_continuous(labels = scales::percent) + 
         theme_bw() +
         scale_color_manual(values=c(rep("#fb8500", 1),  rep("#ffb703", 1), rep("#219ebc", 2), rep("#5AB1BB", 2))) + theme(legend.position="none", axis.text.x = element_text(size = 5), axis.text.y = element_text(size = 5)) #
 
-    ggsave(paste0(path, "plots/hist_corrected.png"), plot=hist, width = 8, height = 2)
+    ggsave(paste0(path, "plots/hist_corrected_", MODE, "_1.png"), plot=hist, width = 8, height = 2)
 
 scatters <- list()
 for (param_name in colnames(post_contract_df)) {
@@ -138,5 +147,5 @@ theme_bw() +
 scale_color_manual(values=c(rep("#fb8500", 1),  rep("#ffb703", 1), rep("#219ebc", 2), rep("#5AB1BB", 2))) + theme(legend.position="none", axis.text.x = element_text(size = 5), axis.text.y = element_text(size = 5),
       axis.title = element_text(size = 15))
 
-ggsave(paste0(path, "plots/model_sensitivity.png"), plot=scatter, width = 8, height = 3)
+ggsave(paste0(path, "plots/model_sensitivity_", MODE, "_1.png"), plot=scatter, width = 8, height = 3)
 

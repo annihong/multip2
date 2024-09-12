@@ -10,7 +10,7 @@ library(doSNOW)
 OUTPUT_PATH = "/home/annihong/projects/simres/size_res/"
 # RSTAN CONFIG:
 CHAINS = 1
-WARMUP = 10
+WARMUP = 1000
 THIN = 1
 # NETWORK INFO: 
 n_seq = c(20, 30, 45, 70, 100, 150, 200)
@@ -36,12 +36,13 @@ ig_scale = 50
 
    
 ########  END SIMULATING NETWORK FROM GROUND TRUTH #########
-cl <- parallel::makeCluster(NUM_CORE)  # Create a cluster with 4 workers
+cl <- parallel::makeCluster(NUM_CORE, outfile="LogSizeSim.txt")  # Create a cluster with 4 workers
 doSNOW::registerDoSNOW(cl)  # Register the cluster for use with foreach
 
 #results <- foreach(iter=1:TOTAL_ITER, .packages="rstan") %dopar% {
 results <- foreach(iter=1:length(n_seq), .packages = "multip2") %dopar% {
     cat(paste0("we are on iteration ", iter, "\n"))
+    n_seq = c(20, 30, 45, 70, 100, 150, 200)
     n = n_seq[iter]
     Sigma <- multip2::sample_Sigma(eta, ig_shape, ig_scale, t)
     sampled_params <- multip2::sample_prior(n, t, mu_0, rho_0, cross_mu_0, cross_rho_0, Sigma)
@@ -57,10 +58,11 @@ results <- foreach(iter=1:length(n_seq), .packages = "multip2") %dopar% {
 
     m_fit <- multip2::Mp2Model(M)
     m_fit <-  multip2::fit(m_fit, chains = CHAINS, warmup = WARMUP, iter = WARMUP*2)
+    cat(paste0("n = ", n))
 
 
     sim_result <- list(sampled_params=sampled_params,Mp2_fit = m_fit)
-    saveRDS(sim_result,file = paste0(OUTPUT_PATH, "network size = ", n, ".Rds"))
+    saveRDS(sim_result,file = paste0(OUTPUT_PATH, "network_size_", n, ".Rds"))
     cat(paste0("Simulated result saved! ","\n"))
     rm(sim_result)
     rm(m_fit)
