@@ -9,11 +9,11 @@ library(doSNOW)
 
 OUTPUT_PATH = "/home/annihong/projects/simres/size_res/"
 # RSTAN CONFIG:
-CHAINS = 1
+CHAINS = 3
 WARMUP = 1000
 THIN = 1
 # NETWORK INFO: 
-n_seq = c(20, 30, 45, 70, 100, 150, 200)
+n_seq = c(100, 150, 200)
 t = 2
 H = t*(t - 1)/2
 #PARALLEL INFO
@@ -42,7 +42,7 @@ doSNOW::registerDoSNOW(cl)  # Register the cluster for use with foreach
 #results <- foreach(iter=1:TOTAL_ITER, .packages="rstan") %dopar% {
 results <- foreach(iter=1:length(n_seq), .packages = "multip2") %dopar% {
     cat(paste0("we are on iteration ", iter, "\n"))
-    n_seq = c(20, 30, 45, 70, 100, 150, 200)
+    n_seq = c(100, 150, 200)
     n = n_seq[iter]
     Sigma <- multip2::sample_Sigma(eta, ig_shape, ig_scale, t)
     sampled_params <- multip2::sample_prior(n, t, mu_0, rho_0, cross_mu_0, cross_rho_0, Sigma)
@@ -57,7 +57,7 @@ results <- foreach(iter=1:length(n_seq), .packages = "multip2") %dopar% {
 
 
     m_fit <- multip2::Mp2Model(M)
-    m_fit <-  multip2::fit(m_fit, chains = CHAINS, warmup = WARMUP, iter = WARMUP*2)
+    m_fit <-  multip2::fit(m_fit, chains = CHAINS, warmup = WARMUP, iter = WARMUP*2, network_sim = FALSE)
     cat(paste0("n = ", n))
 
 

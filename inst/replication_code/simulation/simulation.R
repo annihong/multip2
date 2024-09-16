@@ -8,14 +8,14 @@ library(doSNOW)
 
 #PARALLEL INFO
 NUM_CORE = 32
-TOTAL_ITER = 100
+TOTAL_ITER = 1000 - 707
 OUTPUT_PATH = "/home/annihong/projects/simres/sim_res/"
 # RSTAN CONFIG:
 CHAINS = 2
 WARMUP = 500
 THIN = 1
 HYDRA = "G2"
-CURRENT = 498
+CURRENT = 1000
 END_ITER = CURRENT + TOTAL_ITER - 1
 # NETWORK INFO: 
 n = 30
@@ -70,7 +70,7 @@ results <- foreach(iter=CURRENT:END_ITER, .packages = "multip2") %dopar% {
 
 
     m_fit <- multip2::Mp2Model(M)
-    m_fit <-  multip2::fit(m_fit, chains = CHAINS, warmup = WARMUP, thin = THIN, iter = WARMUP*2)
+    m_fit <-  multip2::fit(m_fit, chains = CHAINS, warmup = WARMUP, thin = THIN, iter = WARMUP*2, network_sim = FALSE)
 
 
     sim_result <- list(sampled_params=sampled_params,Mp2_fit = m_fit)

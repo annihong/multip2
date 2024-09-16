@@ -48,14 +48,14 @@ calc_stats <- function(sampled_params, posterior_draws, param, stat_func){
     for (t in 1:length(prior_params)) {
         prior_param = prior_params[[t]]
         if (MODE == "PS" & identical(stat_func, post_contract_helper) & param == "mu") {
-            # n = nrow(sampled_params$C)
-            # A_idx = 1 + 2 * (t - 1)
-            # B_idx = 2 + 2 * (t - 1)
-            # v_mu = 100 
-            # v_A = sampled_params$Sigma[A_idx, A_idx]
-            # v_B = sampled_params$Sigma[B_idx, B_idx]
-            # cov_AB = sampled_params$Sigma[A_idx, B_idx]
-            # v_PS_mu = v_mu + (1/n) * (v_A + v_B + 2 * cov_AB)
+            n = nrow(sampled_params$C)
+            A_idx = 1 + 2 * (t - 1)
+            B_idx = 2 + 2 * (t - 1)
+            v_mu = 100 
+            v_A = sampled_params$Sigma[A_idx, A_idx]
+            v_B = sampled_params$Sigma[B_idx, B_idx]
+            cov_AB = sampled_params$Sigma[A_idx, B_idx]
+            v_PS_mu = v_mu + (1/n) * (v_A + v_B + 2 * cov_AB)
             stat <- stat_func(prior_param, post_draws[,t], variance = v_PS_mu)
         } else {
             stat <- stat_func(prior_param, post_draws[,t])

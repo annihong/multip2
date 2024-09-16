@@ -43,7 +43,7 @@ dyad_covar <- networks[c("network_covariate1", "network_covariate2")]
 actor_covar <- actor_data[c("actor_attr1", "actor_attr2")]
 
 m_empty <- Mp2Model(dep_net, dyad_covar = dyad_covar, actor_covar = actor_data)
-m_PS <- fit(m_empty, iter=200)
+m_PS <- fit(m_empty, iter=20)
 m_HC <- fit(m_empty, iter=200, stan_file = "multiplex_p2_HC.stan")
 # sim_nets <- extract_network_draws(m_empty_res, 200)
 # simulated_network_checks(sim_nets, m_empty_res, "multiplex_gof_random")
