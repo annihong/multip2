@@ -73,6 +73,7 @@ results <- foreach(iter=CURRENT:END_ITER, .packages = "multip2") %dopar% {
 
     m_fit <- multip2::Mp2Model(M)
     m_fit <-  multip2::fit(m_fit, chains = CHAINS, warmup = WARMUP, thin = THIN, iter = WARMUP*2, network_sim = FALSE)
+    # m_fit <-  multip2::fit(m_fit, chains = 1, warmup =10, thin = 1, iter = 1000, network_sim = FALSE, prior_sim = TRUE, stan_file = "multiplex_p2_low_mem_prior_sim_test.stan")
 
 
     sim_result <- list(sampled_params=sampled_params,Mp2_fit = m_fit)

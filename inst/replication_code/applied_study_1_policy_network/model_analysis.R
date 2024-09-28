@@ -1,4 +1,9 @@
-file_path <- "/home/annihong/projects/simres/fitted_models/"
+file_path <- "/Users/annihong/Documents/Rprojects/fitted_models/"
+
+update_PS_mu <- function(mp2_object) {
+ stan_fit <- mp2_object$fit_res$stan_fit     
+
+}
 
 ##LIBRARIES##
 require(tidyverse)
@@ -11,7 +16,7 @@ require(statnet.common)
 
 
 ##READ IN DATA##
-results <- readRDS(paste0(file_path, "study_1_models.Rds"))
+results <- readRDS(paste0(file_path, "10_study_1_models.Rds"))
 
 
 
