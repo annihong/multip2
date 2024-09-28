@@ -2,7 +2,7 @@
 
 library(multip2)
 path <- "/home/annihong/projects/simres/"
-simulations <- list.files(paste0(path, "sim_res/"))
+simulations <- grep("test_", list.files(paste0(path, "sim_res/")), value=TRUE)[1:20]
 length(simulations)
 #simulations <- grep("1000.Rds$", simulations, value = TRUE)
 MODE = "PS"
@@ -116,8 +116,8 @@ for (file_res in res) {
 
 colnames(rank_df) <- colnames(zscore_df) <- colnames(post_contract_df) <- names(res[[1]]$ranks)
 res=list(rank_df=rank_df, zscore_df=zscore_df, post_contract_df=post_contract_df)
-save(res, file=paste0(path, "analysis_res/sim_analysis_df_full_", MODE, "_1.RData"))
-load(paste0(path, "analysis_res/sim_analysis_df_full_", MODE, "_1.RData"))
+save(res, file=paste0(path, "analysis_res/sim_analysis_df_full_", MODE, "_test20.RData"))
+load(paste0(path, "analysis_res/sim_analysis_df_full_", MODE, "_test20.RData"))
 
 rank_df <- res$rank_df
 zscore_df=res$zscore_df
@@ -129,7 +129,7 @@ hist <- ggplot(tidyr::gather(rank_df)) + geom_histogram(aes(x=value/101, color =
         theme_bw() +
         scale_color_manual(values=c(rep("#fb8500", 1),  rep("#ffb703", 1), rep("#219ebc", 2), rep("#5AB1BB", 2))) + theme(legend.position="none", axis.text.x = element_text(size = 5), axis.text.y = element_text(size = 5)) #
 
-    ggsave(paste0(path, "plots/hist_corrected_", MODE, "_1.png"), plot=hist, width = 8, height = 2)
+    ggsave(paste0(path, "plots/hist_corrected_", MODE, "_2.png"), plot=hist, width = 8, height = 2)
 
 scatters <- list()
 for (param_name in colnames(post_contract_df)) {

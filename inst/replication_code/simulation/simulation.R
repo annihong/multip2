@@ -5,17 +5,19 @@ library(doSNOW)
 #     message("make sure suggested packages are installed")
 # }
 
-
+prior_res <- readRDS("/home/annihong/projects/simres/analysis_res/prior_res.rds")
+rho_s <- sapply(prior_res, function(x) x$sampled_params$rho)
+mu_s <- sapply(prior_res, function(x) x$sampled_params$mu)
 #PARALLEL INFO
 NUM_CORE = 32
-TOTAL_ITER = 1000 - 707
+TOTAL_ITER = length(prior_res)
 OUTPUT_PATH = "/home/annihong/projects/simres/sim_res/"
 # RSTAN CONFIG:
-CHAINS = 2
-WARMUP = 500
+CHAINS = 1
+WARMUP = 800
 THIN = 1
-HYDRA = "G2"
-CURRENT = 1000
+HYDRA = "test"
+CURRENT = 1
 END_ITER = CURRENT + TOTAL_ITER - 1
 # NETWORK INFO: 
 n = 30
@@ -57,12 +59,12 @@ doSNOW::registerDoSNOW(cl)  # Register the cluster for use with foreach
 #results <- foreach(iter=1:TOTAL_ITER, .packages="rstan") %dopar% {
 results <- foreach(iter=CURRENT:END_ITER, .packages = "multip2") %dopar% {
     cat(paste0("we are on iteration ", iter, " hydra: ",HYDRA, "\n"), file = "simulation_log.txt", append=T)
-    Sigma <- multip2::sample_Sigma(eta, ig_shape, ig_scale, t)
-    sampled_params <- multip2::sample_prior(n, t, mu_0, rho_0, cross_mu_0, cross_rho_0, Sigma)
-    simulated_network <- multip2::simulate_network(n, t, sampled_params)
+    # Sigma <- multip2::sample_Sigma(eta, ig_shape, ig_scale, t)
+    # sampled_params <- multip2::sample_prior(n, t, mu_0, rho_0, cross_mu_0, cross_rho_0, Sigma)
+    # simulated_network <- multip2::simulate_network(n, t, sampled_params)
 
-
-    M <- simulated_network #network to fit:
+    sampled_params <- prior_res[[iter]]$sampled_params
+    M <- prior_res[[iter]]$simulated_network #network to fit:
 
     if (sum(is.na(M))) {
         cat(paste0("The simulated network is NA...\n"), file = "simulation_log.txt", append=T)

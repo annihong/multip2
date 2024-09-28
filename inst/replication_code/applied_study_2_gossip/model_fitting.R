@@ -11,15 +11,15 @@ file_path <- "/home/annihong/projects/simres/fitted_models/"
 
 filtered_df <- read.csv(paste0(path_to_package, "data-raw/gossip/filtered_df_no_missing_wave_4.csv")) 
 to_fit_ids <- filtered_df$class_id
-class_ids <- setdiff(to_fit_ids, fitted_ids)
-
+#class_ids <- setdiff(to_fit_ids, fitted_ids)
+class_ids <- to_fit_ids
 
 #output path, change to your own 
 
 WARMUP = 2000
 CHAINS = 4
 WAVE=4
-NUM_CORE = CHAINS * length(class_ids)
+NUM_CORE = 60
 #class_begin = 19 #doing it in chuncks
 #class_end = 39
 

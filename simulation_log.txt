@@ -721,3 +721,592 @@ we are on iteration 1017 hydra: G2
 we are on iteration 1020 hydra: G2
 we are on iteration 1032 hydra: G2
 we are on iteration 1033 hydra: G2
+Simulated result saved! 
+we are on iteration 1034 hydra: G2
+Simulated result saved! 
+we are on iteration 1035 hydra: G2
+Simulated result saved! 
+we are on iteration 1036 hydra: G2
+Simulated result saved! 
+we are on iteration 1037 hydra: G2
+Simulated result saved! 
+we are on iteration 1038 hydra: G2
+Simulated result saved! 
+we are on iteration 1039 hydra: G2
+Simulated result saved! 
+we are on iteration 1040 hydra: G2
+Simulated result saved! 
+we are on iteration 1041 hydra: G2
+Simulated result saved! 
+we are on iteration 1042 hydra: G2
+Simulated result saved! 
+we are on iteration 1043 hydra: G2
+Simulated result saved! 
+we are on iteration 1044 hydra: G2
+Simulated result saved! 
+we are on iteration 1045 hydra: G2
+Simulated result saved! 
+we are on iteration 1046 hydra: G2
+Simulated result saved! 
+we are on iteration 1047 hydra: G2
+Simulated result saved! 
+we are on iteration 1048 hydra: G2
+Simulated result saved! 
+we are on iteration 1049 hydra: G2
+Simulated result saved! 
+we are on iteration 1050 hydra: G2
+Simulated result saved! 
+we are on iteration 1051 hydra: G2
+Simulated result saved! 
+we are on iteration 1052 hydra: G2
+Simulated result saved! 
+we are on iteration 1053 hydra: G2
+Simulated result saved! 
+we are on iteration 1054 hydra: G2
+Simulated result saved! 
+we are on iteration 1055 hydra: G2
+Simulated result saved! 
+we are on iteration 1056 hydra: G2
+Simulated result saved! 
+we are on iteration 1057 hydra: G2
+Simulated result saved! 
+we are on iteration 1058 hydra: G2
+Simulated result saved! 
+we are on iteration 1059 hydra: G2
+Simulated result saved! 
+we are on iteration 1060 hydra: G2
+Simulated result saved! 
+we are on iteration 1061 hydra: G2
+Simulated result saved! 
+we are on iteration 1062 hydra: G2
+Simulated result saved! 
+we are on iteration 1063 hydra: G2
+Simulated result saved! 
+we are on iteration 1064 hydra: G2
+Simulated result saved! 
+we are on iteration 1065 hydra: G2
+Simulated result saved! 
+we are on iteration 1066 hydra: G2
+Simulated result saved! 
+we are on iteration 1067 hydra: G2
+Simulated result saved! 
+we are on iteration 1068 hydra: G2
+Simulated result saved! 
+we are on iteration 1069 hydra: G2
+Simulated result saved! 
+we are on iteration 1070 hydra: G2
+Simulated result saved! 
+we are on iteration 1071 hydra: G2
+Simulated result saved! 
+we are on iteration 1072 hydra: G2
+Simulated result saved! 
+we are on iteration 1073 hydra: G2
+Simulated result saved! 
+we are on iteration 1074 hydra: G2
+Simulated result saved! 
+we are on iteration 1075 hydra: G2
+Simulated result saved! 
+we are on iteration 1076 hydra: G2
+Simulated result saved! 
+we are on iteration 1077 hydra: G2
+Simulated result saved! 
+we are on iteration 1078 hydra: G2
+Simulated result saved! 
+we are on iteration 1079 hydra: G2
+Simulated result saved! 
+we are on iteration 1080 hydra: G2
+Simulated result saved! 
+we are on iteration 1081 hydra: G2
+Simulated result saved! 
+we are on iteration 1082 hydra: G2
+Simulated result saved! 
+we are on iteration 1083 hydra: G2
+Simulated result saved! 
+we are on iteration 1084 hydra: G2
+Simulated result saved! 
+we are on iteration 1085 hydra: G2
+Simulated result saved! 
+we are on iteration 1086 hydra: G2
+Simulated result saved! 
+we are on iteration 1087 hydra: G2
+Simulated result saved! 
+we are on iteration 1088 hydra: G2
+Simulated result saved! 
+we are on iteration 1089 hydra: G2
+Simulated result saved! 
+we are on iteration 1090 hydra: G2
+Simulated result saved! 
+we are on iteration 1091 hydra: G2
+Simulated result saved! 
+we are on iteration 1092 hydra: G2
+Simulated result saved! 
+we are on iteration 1093 hydra: G2
+Simulated result saved! 
+we are on iteration 1094 hydra: G2
+Simulated result saved! 
+we are on iteration 1095 hydra: G2
+Simulated result saved! 
+we are on iteration 1096 hydra: G2
+Simulated result saved! 
+we are on iteration 1097 hydra: G2
+Simulated result saved! 
+we are on iteration 1098 hydra: G2
+Simulated result saved! 
+we are on iteration 1099 hydra: G2
+Simulated result saved! 
+we are on iteration 1100 hydra: G2
+Simulated result saved! 
+we are on iteration 1101 hydra: G2
+Simulated result saved! 
+we are on iteration 1102 hydra: G2
+Simulated result saved! 
+we are on iteration 1103 hydra: G2
+Simulated result saved! 
+we are on iteration 1104 hydra: G2
+Simulated result saved! 
+we are on iteration 1105 hydra: G2
+Simulated result saved! 
+we are on iteration 1106 hydra: G2
+2024-09-17 17:58:38.11683
+There are a total of 220 simulations, and # iterations = 1000 Let's hope for the best!hydra: G2
+prior info: eta = 2, shape = 3, scale= 50
+we are on iteration 1293 hydra: G2
+we are on iteration 1294 hydra: G2
+we are on iteration 1295 hydra: G2
+we are on iteration 1324 hydra: G2
+we are on iteration 1296 hydra: G2
+we are on iteration 1301 hydra: G2
+we are on iteration 1297 hydra: G2
+we are on iteration 1300 hydra: G2
+we are on iteration 1302 hydra: G2
+we are on iteration 1310 hydra: G2
+we are on iteration 1319 hydra: G2
+we are on iteration 1318 hydra: G2
+we are on iteration 1323 hydra: G2
+we are on iteration 1312 hydra: G2
+we are on iteration 1314 hydra: G2
+we are on iteration 1306 hydra: G2
+we are on iteration 1321 hydra: G2
+we are on iteration 1304 hydra: G2
+we are on iteration 1299 hydra: G2
+we are on iteration 1298 hydra: G2
+we are on iteration 1303 hydra: G2
+we are on iteration 1305 hydra: G2
+we are on iteration 1307 hydra: G2
+we are on iteration 1308 hydra: G2
+we are on iteration 1313 hydra: G2
+we are on iteration 1311 hydra: G2
+we are on iteration 1322 hydra: G2
+we are on iteration 1315 hydra: G2
+we are on iteration 1309 hydra: G2
+we are on iteration 1317 hydra: G2
+we are on iteration 1316 hydra: G2
+we are on iteration 1320 hydra: G2
+The simulated network is NA...
+we are on iteration 1325 hydra: G2
+Simulated result saved! 
+we are on iteration 1326 hydra: G2
+Simulated result saved! 
+we are on iteration 1327 hydra: G2
+Simulated result saved! 
+we are on iteration 1328 hydra: G2
+Simulated result saved! 
+we are on iteration 1329 hydra: G2
+Simulated result saved! 
+we are on iteration 1330 hydra: G2
+Simulated result saved! 
+we are on iteration 1331 hydra: G2
+Simulated result saved! 
+we are on iteration 1332 hydra: G2
+Simulated result saved! 
+we are on iteration 1333 hydra: G2
+Simulated result saved! 
+we are on iteration 1334 hydra: G2
+Simulated result saved! 
+we are on iteration 1335 hydra: G2
+Simulated result saved! 
+we are on iteration 1336 hydra: G2
+Simulated result saved! 
+we are on iteration 1337 hydra: G2
+Simulated result saved! 
+we are on iteration 1338 hydra: G2
+Simulated result saved! 
+we are on iteration 1339 hydra: G2
+Simulated result saved! 
+we are on iteration 1340 hydra: G2
+Simulated result saved! 
+we are on iteration 1341 hydra: G2
+Simulated result saved! 
+we are on iteration 1342 hydra: G2
+Simulated result saved! 
+we are on iteration 1343 hydra: G2
+Simulated result saved! 
+we are on iteration 1344 hydra: G2
+Simulated result saved! 
+we are on iteration 1345 hydra: G2
+Simulated result saved! 
+we are on iteration 1346 hydra: G2
+Simulated result saved! 
+we are on iteration 1347 hydra: G2
+Simulated result saved! 
+we are on iteration 1348 hydra: G2
+Simulated result saved! 
+we are on iteration 1349 hydra: G2
+Simulated result saved! 
+we are on iteration 1350 hydra: G2
+Simulated result saved! 
+we are on iteration 1351 hydra: G2
+Simulated result saved! 
+we are on iteration 1352 hydra: G2
+Simulated result saved! 
+we are on iteration 1353 hydra: G2
+Simulated result saved! 
+we are on iteration 1354 hydra: G2
+Simulated result saved! 
+we are on iteration 1355 hydra: G2
+Simulated result saved! 
+we are on iteration 1356 hydra: G2
+Simulated result saved! 
+we are on iteration 1357 hydra: G2
+Simulated result saved! 
+we are on iteration 1358 hydra: G2
+Simulated result saved! 
+we are on iteration 1359 hydra: G2
+Simulated result saved! 
+we are on iteration 1360 hydra: G2
+Simulated result saved! 
+we are on iteration 1361 hydra: G2
+Simulated result saved! 
+we are on iteration 1362 hydra: G2
+Simulated result saved! 
+we are on iteration 1363 hydra: G2
+Simulated result saved! 
+we are on iteration 1364 hydra: G2
+Simulated result saved! 
+we are on iteration 1365 hydra: G2
+Simulated result saved! 
+we are on iteration 1366 hydra: G2
+Simulated result saved! 
+we are on iteration 1367 hydra: G2
+Simulated result saved! 
+we are on iteration 1368 hydra: G2
+Simulated result saved! 
+we are on iteration 1369 hydra: G2
+Simulated result saved! 
+we are on iteration 1370 hydra: G2
+Simulated result saved! 
+we are on iteration 1371 hydra: G2
+Simulated result saved! 
+we are on iteration 1372 hydra: G2
+Simulated result saved! 
+we are on iteration 1373 hydra: G2
+Simulated result saved! 
+we are on iteration 1374 hydra: G2
+Simulated result saved! 
+we are on iteration 1375 hydra: G2
+Simulated result saved! 
+we are on iteration 1376 hydra: G2
+Simulated result saved! 
+we are on iteration 1377 hydra: G2
+Simulated result saved! 
+we are on iteration 1378 hydra: G2
+Simulated result saved! 
+we are on iteration 1379 hydra: G2
+Simulated result saved! 
+we are on iteration 1380 hydra: G2
+Simulated result saved! 
+we are on iteration 1381 hydra: G2
+Simulated result saved! 
+we are on iteration 1382 hydra: G2
+Simulated result saved! 
+we are on iteration 1383 hydra: G2
+Simulated result saved! 
+we are on iteration 1384 hydra: G2
+Simulated result saved! 
+we are on iteration 1385 hydra: G2
+Simulated result saved! 
+we are on iteration 1386 hydra: G2
+Simulated result saved! 
+we are on iteration 1387 hydra: G2
+Simulated result saved! 
+we are on iteration 1388 hydra: G2
+The simulated network is NA...
+we are on iteration 1389 hydra: G2
+Simulated result saved! 
+we are on iteration 1390 hydra: G2
+Simulated result saved! 
+we are on iteration 1391 hydra: G2
+Simulated result saved! 
+we are on iteration 1392 hydra: G2
+Simulated result saved! 
+we are on iteration 1393 hydra: G2
+Simulated result saved! 
+we are on iteration 1394 hydra: G2
+The simulated network is NA...
+we are on iteration 1395 hydra: G2
+Simulated result saved! 
+we are on iteration 1396 hydra: G2
+Simulated result saved! 
+we are on iteration 1397 hydra: G2
+Simulated result saved! 
+we are on iteration 1398 hydra: G2
+Simulated result saved! 
+we are on iteration 1399 hydra: G2
+Simulated result saved! 
+we are on iteration 1400 hydra: G2
+Simulated result saved! 
+we are on iteration 1401 hydra: G2
+Simulated result saved! 
+we are on iteration 1402 hydra: G2
+Simulated result saved! 
+we are on iteration 1403 hydra: G2
+Simulated result saved! 
+we are on iteration 1404 hydra: G2
+Simulated result saved! 
+we are on iteration 1405 hydra: G2
+Simulated result saved! 
+we are on iteration 1406 hydra: G2
+Simulated result saved! 
+we are on iteration 1407 hydra: G2
+Simulated result saved! 
+we are on iteration 1408 hydra: G2
+Simulated result saved! 
+we are on iteration 1409 hydra: G2
+Simulated result saved! 
+we are on iteration 1410 hydra: G2
+Simulated result saved! 
+we are on iteration 1411 hydra: G2
+Simulated result saved! 
+we are on iteration 1412 hydra: G2
+Simulated result saved! 
+we are on iteration 1413 hydra: G2
+Simulated result saved! 
+we are on iteration 1414 hydra: G2
+Simulated result saved! 
+we are on iteration 1415 hydra: G2
+Simulated result saved! 
+we are on iteration 1416 hydra: G2
+Simulated result saved! 
+we are on iteration 1417 hydra: G2
+Simulated result saved! 
+we are on iteration 1418 hydra: G2
+Simulated result saved! 
+we are on iteration 1419 hydra: G2
+Simulated result saved! 
+we are on iteration 1420 hydra: G2
+Simulated result saved! 
+we are on iteration 1421 hydra: G2
+Simulated result saved! 
+we are on iteration 1422 hydra: G2
+Simulated result saved! 
+we are on iteration 1423 hydra: G2
+Simulated result saved! 
+we are on iteration 1424 hydra: G2
+Simulated result saved! 
+we are on iteration 1425 hydra: G2
+Simulated result saved! 
+we are on iteration 1426 hydra: G2
+Simulated result saved! 
+we are on iteration 1427 hydra: G2
+Simulated result saved! 
+we are on iteration 1428 hydra: G2
+Simulated result saved! 
+we are on iteration 1429 hydra: G2
+Simulated result saved! 
+we are on iteration 1430 hydra: G2
+Simulated result saved! 
+we are on iteration 1431 hydra: G2
+Simulated result saved! 
+we are on iteration 1432 hydra: G2
+Simulated result saved! 
+we are on iteration 1433 hydra: G2
+Simulated result saved! 
+we are on iteration 1434 hydra: G2
+Simulated result saved! 
+we are on iteration 1435 hydra: G2
+Simulated result saved! 
+we are on iteration 1436 hydra: G2
+Simulated result saved! 
+we are on iteration 1437 hydra: G2
+Simulated result saved! 
+we are on iteration 1438 hydra: G2
+Simulated result saved! 
+we are on iteration 1439 hydra: G2
+Simulated result saved! 
+we are on iteration 1440 hydra: G2
+Simulated result saved! 
+we are on iteration 1441 hydra: G2
+Simulated result saved! 
+we are on iteration 1442 hydra: G2
+Simulated result saved! 
+we are on iteration 1443 hydra: G2
+The simulated network is NA...
+we are on iteration 1444 hydra: G2
+Simulated result saved! 
+we are on iteration 1445 hydra: G2
+Simulated result saved! 
+we are on iteration 1446 hydra: G2
+Simulated result saved! 
+we are on iteration 1447 hydra: G2
+Simulated result saved! 
+we are on iteration 1448 hydra: G2
+Simulated result saved! 
+we are on iteration 1449 hydra: G2
+Simulated result saved! 
+we are on iteration 1450 hydra: G2
+Simulated result saved! 
+we are on iteration 1451 hydra: G2
+Simulated result saved! 
+we are on iteration 1452 hydra: G2
+Simulated result saved! 
+we are on iteration 1453 hydra: G2
+Simulated result saved! 
+we are on iteration 1454 hydra: G2
+Simulated result saved! 
+we are on iteration 1455 hydra: G2
+Simulated result saved! 
+we are on iteration 1456 hydra: G2
+Simulated result saved! 
+we are on iteration 1457 hydra: G2
+Simulated result saved! 
+we are on iteration 1458 hydra: G2
+Simulated result saved! 
+we are on iteration 1459 hydra: G2
+Simulated result saved! 
+we are on iteration 1460 hydra: G2
+Simulated result saved! 
+we are on iteration 1461 hydra: G2
+Simulated result saved! 
+we are on iteration 1462 hydra: G2
+Simulated result saved! 
+we are on iteration 1463 hydra: G2
+Simulated result saved! 
+we are on iteration 1464 hydra: G2
+Simulated result saved! 
+we are on iteration 1465 hydra: G2
+Simulated result saved! 
+we are on iteration 1466 hydra: G2
+Simulated result saved! 
+we are on iteration 1467 hydra: G2
+Simulated result saved! 
+we are on iteration 1468 hydra: G2
+Simulated result saved! 
+we are on iteration 1469 hydra: G2
+Simulated result saved! 
+we are on iteration 1470 hydra: G2
+Simulated result saved! 
+we are on iteration 1471 hydra: G2
+Simulated result saved! 
+we are on iteration 1472 hydra: G2
+Simulated result saved! 
+we are on iteration 1473 hydra: G2
+Simulated result saved! 
+we are on iteration 1474 hydra: G2
+Simulated result saved! 
+we are on iteration 1475 hydra: G2
+Simulated result saved! 
+we are on iteration 1476 hydra: G2
+Simulated result saved! 
+we are on iteration 1477 hydra: G2
+Simulated result saved! 
+we are on iteration 1478 hydra: G2
+Simulated result saved! 
+we are on iteration 1479 hydra: G2
+Simulated result saved! 
+we are on iteration 1480 hydra: G2
+Simulated result saved! 
+we are on iteration 1481 hydra: G2
+Simulated result saved! 
+we are on iteration 1482 hydra: G2
+Simulated result saved! 
+we are on iteration 1483 hydra: G2
+Simulated result saved! 
+we are on iteration 1484 hydra: G2
+Simulated result saved! 
+we are on iteration 1485 hydra: G2
+Simulated result saved! 
+we are on iteration 1486 hydra: G2
+Simulated result saved! 
+we are on iteration 1487 hydra: G2
+Simulated result saved! 
+we are on iteration 1488 hydra: G2
+Simulated result saved! 
+we are on iteration 1489 hydra: G2
+Simulated result saved! 
+we are on iteration 1490 hydra: G2
+Simulated result saved! 
+we are on iteration 1491 hydra: G2
+Simulated result saved! 
+we are on iteration 1492 hydra: G2
+Simulated result saved! 
+we are on iteration 1493 hydra: G2
+Simulated result saved! 
+we are on iteration 1494 hydra: G2
+Simulated result saved! 
+we are on iteration 1495 hydra: G2
+Simulated result saved! 
+we are on iteration 1496 hydra: G2
+Simulated result saved! 
+we are on iteration 1497 hydra: G2
+Simulated result saved! 
+we are on iteration 1498 hydra: G2
+Simulated result saved! 
+we are on iteration 1499 hydra: G2
+Simulated result saved! 
+we are on iteration 1500 hydra: G2
+Simulated result saved! 
+we are on iteration 1501 hydra: G2
+Simulated result saved! 
+we are on iteration 1502 hydra: G2
+Simulated result saved! 
+we are on iteration 1503 hydra: G2
+Simulated result saved! 
+we are on iteration 1504 hydra: G2
+Simulated result saved! 
+we are on iteration 1505 hydra: G2
+Simulated result saved! 
+we are on iteration 1506 hydra: G2
+Simulated result saved! 
+we are on iteration 1507 hydra: G2
+Simulated result saved! 
+we are on iteration 1508 hydra: G2
+Simulated result saved! 
+we are on iteration 1509 hydra: G2
+Simulated result saved! 
+we are on iteration 1510 hydra: G2
+Simulated result saved! 
+we are on iteration 1511 hydra: G2
+Simulated result saved! 
+we are on iteration 1512 hydra: G2
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
+Simulated result saved! 
