@@ -721,3 +721,6 @@ we are on iteration 1017 hydra: G2
 we are on iteration 1020 hydra: G2
 we are on iteration 1032 hydra: G2
 we are on iteration 1033 hydra: G2
+2024-09-25 15:32:04.085444
+There are a total of 293 simulations, and # iterations = 1000 Let's hope for the best!hydra: G2
+prior info: eta = 2, shape = 3, scale= 50

@@ -1,8 +1,9 @@
 #load("../../results/sim_res_hydra6_num_sim_9_out_of_50.RData")
 
 library(multip2)
-path <- "/home/annihong/projects/simres/"
-simulations <- list.files(paste0(path, "sim_res/"))
+path <- "/Users/annihong/Documents/Rprojects/simres/"
+simulations <- list.files(paste0(path, "analysis_res/"))
+simulations <- simulations[grep("test_", simulations)]
 length(simulations)
 #simulations <- grep("1000.Rds$", simulations, value = TRUE)
 MODE = "PS"
@@ -10,8 +11,12 @@ MODE = "PS"
 #simulations <- simulations[grep("inv_gamma", simulations)]
 library(ggplot2)
 library(dplyr)
-PS_mu_prior <- read.csv(file = "/home/annihong/projects/simres/analysis_res/PS_mu_prior.csv")[,c(2,3)]
-v_PS_mu <- (sd(unlist(PS_mu_prior)))^2
+# PS_mu_prior <- read.csv(file = "/home/annihong/projects/simres/analysis_res/PS_mu_prior.csv")[,c(2,3)]
+# v_PS_mu <- (sd(unlist(PS_mu_prior)))^2
+
+sampled_params_list <- list()
+posterior_draws_list <- list()
+
 
 
 
@@ -67,7 +72,7 @@ calc_stats <- function(sampled_params, posterior_draws, param, stat_func){
 }
 
 calc_stats_file <- function(simulation_file, solution){
-    file_path <- paste0(path, "sim_res/", simulation_file)
+    file_path <- paste0(path, "analysis_res/", simulation_file)
     #print(simulation_file)
     # e1 <- new.env(parent = baseenv())
     # load(file_path, envir = e1)
@@ -86,9 +91,10 @@ calc_stats_file <- function(simulation_file, solution){
         A_bar_prior <- colMeans(sampled_params$C[,1 + 2*(1:t_total - 1)])
         B_bar_prior <- colMeans(sampled_params$C[,2 + 2*(1:t_total - 1)])
         sampled_params$mu <- sampled_params$mu + A_bar_prior + B_bar_prior 
+    
     }
     
-    
+
     #posterior_draws <- sim_result$posterior_draws
 
     params <- names(sampled_params)[1:4] # no sigma
@@ -100,11 +106,16 @@ calc_stats_file <- function(simulation_file, solution){
             res[[i]] = c(res[[i]], calc_stats(sampled_params, posterior_draws, param, stat_funcs[[i]]))
         }
     }
+    res$sampled_params <- sampled_params
+    res$posterior_draws <- posterior_draws
     return(res)
 }
 
 
 res <- lapply(simulations, calc_stats_file)
+rho_s <- sapply(1:length(res), function(i) res[[i]]$sampled_params$rho)
+mu_s <- sapply(1:length(res), function(i) res[[i]]$sampled_params$mu)
+
 rank_df <- data.frame()
 zscore_df <- data.frame()
 post_contract_df <- data.frame()
@@ -118,12 +129,13 @@ colnames(rank_df) <- colnames(zscore_df) <- colnames(post_contract_df) <- names(
 res=list(rank_df=rank_df, zscore_df=zscore_df, post_contract_df=post_contract_df)
 save(res, file=paste0(path, "analysis_res/sim_analysis_df_full_", MODE, "_1.RData"))
 load(paste0(path, "analysis_res/sim_analysis_df_full_", MODE, "_1.RData"))
+saveRDS(list(params=sampled_params_list, draws=posterior_draws_list), file=paste0(path, "analysis_res/prior_n_posterior_draws.rds"))
 
 rank_df <- res$rank_df
 zscore_df=res$zscore_df
 post_contract_df=res$post_contract_df
 
-hist <- ggplot(tidyr::gather(rank_df)) + geom_histogram(aes(x=value/101, color = key), size = 1, breaks=seq(0,1,0.1)) +    
+hist <- ggplot(tidyr::gather(rank_df)) + geom_histogram(aes(x=value/101, color = key), size = 1, breaks=seq(0,1,0.05)) +    
         facet_wrap(~key, ncol=6) + ylab("") + xlab("") +
         #scale_y_continuous(labels = scales::percent) + 
         theme_bw() +
@@ -148,4 +160,23 @@ scale_color_manual(values=c(rep("#fb8500", 1),  rep("#ffb703", 1), rep("#219ebc"
       axis.title = element_text(size = 15))
 
 ggsave(paste0(path, "plots/model_sensitivity_", MODE, "_1.png"), plot=scatter, width = 8, height = 3)
+
+
+
+# library(ggplot2)
+# set.seed(1)
+# x<-runif(100,-1,1)
+# dd<-data.frame(x)
+
+# ks.test(rank_df$rho_2,"punif",1,101)
+
+# rank_df <- res$rank_df
+# rank_df <- rank_df[300:1000,]
+# ed <- ecdf(rank_df$rho_2)
+# maxdiffidx <- which.max(abs(ed(rank_df$rho_2)-punif(rank_df$rho_2,1,101)))
+# maxdiffat <- rank_df$rho_2[maxdiffidx]
+
+# p<-ggplot(aes(rho_2),data=rank_df)+stat_ecdf()+theme_bw()+stat_function(fun=punif,args=list(1,101))
+# p<-p+labs(title="ECDF and theoretical CDF")+geom_vline(xintercept=maxdiffat, lty=2)
+# p
 
