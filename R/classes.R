@@ -255,7 +255,7 @@ fit <- function(model_obj, ...) {
 #' @export
 fit.Mp2Model <- function(model_obj, chains = 4, iter = 200, warmup = floor(iter/2),
                      thin = 1, seed = sample.int(.Machine$integer.max, 1),
-                    prior_sim = FALSE, network_sim = TRUE, mc.cores = parallel::detectCores(), auto_write = TRUE, stan_file = "multiplex_p2_low_mem.stan", ...) {
+                    prior_sim = FALSE, network_sim = TRUE, mc.cores = parallel::detectCores(), auto_write = TRUE, stan_file = "multiplex_p2_low_mem.stan", fit = TRUE, ...) {
 
     model_obj <- create_stan_data(model_obj)
     model_obj$fit_res$stan_data$prior_sim = prior_sim
@@ -264,21 +264,24 @@ fit.Mp2Model <- function(model_obj, chains = 4, iter = 200, warmup = floor(iter/
     options(mc.cores =mc.cores)
     rstan::rstan_options(auto_write = auto_write)
     
-    fpath <- system.file("stan", stan_file, package="multip2")
-    p2_fit <- rstan::stan(
-                    file=fpath, 
-                    data = stan_data,
-                    chains = chains,
-                    iter = iter,
-                    warmup = warmup,
-                    thin = thin,
-                    seed = seed, 
-                    ...
-                    )
-    model_obj$fit_res$stan_fit <- p2_fit
-    s <- create_summary(model_obj)
-    model_obj$fit_res$summary <- s$summary
-    model_obj$fit_res$par_labels <- s$par_labels
+    if (fit) {
+        fpath <- system.file("stan", stan_file, package="multip2")
+        p2_fit <- rstan::stan(
+                        file=fpath, 
+                        data = stan_data,
+                        chains = chains,
+                        iter = iter,
+                        warmup = warmup,
+                        thin = thin,
+                        seed = seed, 
+                        ...
+                        )
+        model_obj$fit_res$stan_fit <- p2_fit
+        s <- create_summary(model_obj)
+        model_obj$fit_res$summary <- s$summary
+        model_obj$fit_res$par_labels <- s$par_labels
+    }
+
     return(model_obj)
 }
 

@@ -1,4 +1,5 @@
 library(multip2)
+seed = 102224
 file_path <- "/home/annihong/projects/simres/fitted_models/"
 
 WARMUP = 2000
@@ -13,7 +14,7 @@ colnames(actor_covar) <- "govt"
 
 # fit the model, empty model is fitted first:
 m_1 <- Mp2Model(dep_net, dyad_covar, actor_covar)
-m_1 <- fit(m_1, chains = CHAINS, warmup = WARMUP, thin = 1, iter = WARMUP*2)
+m_1 <- fit(m_1, chains = CHAINS, warmup = WARMUP, thin = 1, iter = WARMUP*2, network_sim = TRUE, seed = seed, par = "x_beta", include = FALSE, stan_file = "multiplex_p2_revert.stan")
 
 # model 2 includes the covariates info
 # configure the data
@@ -23,8 +24,8 @@ m_2 <- update_covar(m_2, layer_1 = "PO", density = "prefsim", receiver = "govt",
 m_2 <- update_covar(m_2, layer_1 = "SC", density = "prefsim", receiver = "govt", sender = "govt")
 m_2 <- update_covar(m_2, layer_1 = "PE", density = "prefsim", receiver = "govt", sender = "govt")
 # fit the model
-m_2 <- fit(m_2, chains = CHAINS, warmup = WARMUP, thin = 1, iter = WARMUP*2)
+m_2 <- fit(m_2, chains = CHAINS, warmup = WARMUP, thin = 1, iter = WARMUP*2, network_sim = TRUE, seed = seed, par = "x_beta", include = FALSE, stan_file = "multiplex_p2_revert.stan")
 
 results <- list(m_1 = m_1, m_2 = m_2)
 # save the fitted models
-saveRDS(results, file = paste0(file_path, "study_1_models.Rds"))
+saveRDS(results, file = paste0(file_path, "study_1_models_revert.Rds"))

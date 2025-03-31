@@ -71,3 +71,22 @@ stopCluster(cl)
 ######## END FITTING THE MODEL IN RSTAN #########
 
 ######## ENDSIMULATIONS: #########
+
+###########PLOTTING ##############
+PATH <- "/home/annihong/projects/simres/size_res/"
+n_seq = c(20, 30, 45, 70, 150, 200)
+
+get_time <- function(size) {
+    print(size)
+    res <- readRDS(paste0(PATH, "network_size_", size, ".Rds"))
+    fit <- res$Mp2_fit$fit_res$stan_fit
+    time <- rstan::get_elapsed_time(fit)
+    time = cbind(time, time[,2] + time[,1])
+    time = cbind(time, rep(size, 3))
+    return(time)
+}
+
+res <- lapply(n_seq, get_time)
+res <- do.call(rbind, res)
+colnames(res) <- c("warmup", "sample", "total", "size")
+write.csv(res, file="/home/annihong/projects/simres/analysis_res/size_sim.csv")
