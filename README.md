@@ -14,7 +14,14 @@ You can read more about the multiplex p2 model in the following paper:
 [The Multiplex p2 Model: Mixed-Effects Modeling for Multiplex Social
 Networks](https://arxiv.org/abs/2405.17707)
 
-## Loading the package
+## Loading the package + visualization functions
+
+``` r
+#remotes::install_github("annihong/multip2") #uncomment if you have not installed the package already.
+library(multip2)
+library(igraph)
+library(ggplot2)
+```
 
 ``` r
 plot_network_binary <- function(M, title, l) {
@@ -95,7 +102,9 @@ prior_draws <- extract_network_draws(m_empty_prior, 1000)
 prior_simulated_network_checks(prior_draws)
 ```
 
-\##how to change priors $\mu = 0$ means that
+## how to change priors
+
+$\mu = 0$ means that
 $\frac{P(i \to j|j \not \to i)}{P(i \not \to j|j \not \to i)} = \exp(0) = 1$,
 that is it equally as likely for i to send a tie to j or not, *given
 that there is no tie from j to i*. For example if we want the prior to
@@ -203,9 +212,9 @@ rm(m_empty_missing_fit)
 rm(sim_nets_missing)
 ```
 
-# Adding in covariates!
+# Adding in covariates
 
-## Model 1: Baseline model with preference similarity:
+### Model 1: Baseline model with preference similarity:
 
 ``` r
 m_fit <- m_empty
@@ -233,7 +242,7 @@ simulated_network_checks(sim_nets, dep_net, "multiplex_gof_baseline")
 simulated_network_checks(sim_nets, dep_net, "multiplex_gof_random")
 ```
 
-Model 2: Adding perception of influence and govt:
+### Model 2: Adding perception of influence and govt:
 
 Define the model
 
@@ -268,7 +277,7 @@ simulated_network_checks(sim_nets, dep_net, "multiplex_gof_baseline")
 simulated_network_checks(sim_nets, dep_net, "multiplex_gof_random")
 ```
 
-## Model 3
+### Model 3
 
 How it’s your turn!
 
