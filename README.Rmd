@@ -96,7 +96,7 @@ prior_draws <- extract_network_draws(m_empty_prior, 1000)
 prior_simulated_network_checks(prior_draws)
 ```
 
-## how to change priors
+## How to change priors
  $\mu = 0$ means that $\frac{P(i \to j|j \not \to i)}{P(i \not \to j|j \not \to i)} = \exp(0) = 1$, that is it equally as likely for i to send a tie to j or not, *given that there is no tie from j to i*. For example if we want the prior to be such that it is *10 times* as likely for i to *not* send scientific information to j than for i to send such information, *given that there is no scientific tie from j to i*, in the *baseline*,\
 $\frac{P(i \to j | j \not \to i}{P(i \not \to j| j \not \to i} = \frac{1}{10}$, means that we need $\mu \sim \mathcal{N}(\log(\frac{1}{10}), \sigma)$. Thus we change the mean of the prior distribution to be $\log(\frac{1}{10}) = -2.30$.
 

@@ -102,7 +102,7 @@ prior_draws <- extract_network_draws(m_empty_prior, 1000)
 prior_simulated_network_checks(prior_draws)
 ```
 
-## how to change priors
+## How to change priors
 
 $\mu = 0$ means that
 $\frac{P(i \to j|j \not \to i)}{P(i \not \to j|j \not \to i)} = \exp(0) = 1$,
