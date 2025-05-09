@@ -1,4 +1,4 @@
-#setwd("./multip2")
+setwd("./multip2")
 devtools::load_all()
 library(rstan)
 options(mc.cores = 10)
@@ -72,7 +72,7 @@ network1 <- simulate_network(n, t, params)
 
 dep_net <- network1
 m_empty <- Mp2Model(dep_net)
-fit(m_empty,iter=100)
+# fit(m_empty,iter=100)
 stan_data_1 <- create_stan_data(m_empty)$fit_res$stan_data
 
 # dep_net <- network2
@@ -90,7 +90,7 @@ stan_data_1 <- create_stan_data(m_empty)$fit_res$stan_data
 stan_data_1$network_sim = FALSE
 stan_data_1$prior_sim = FALSE
 
-res <- rstan::stan(file = "/home/annihong/projects/multip2/inst/stan/multiplex_p2_revert.stan", data = stan_data_1, chains = 1, iter = 200)
+# res <- rstan::stan(file = "/home/annihong/projects/multip2/inst/stan/multiplex_p2_revert.stan", data = stan_data_1, chains = 1, iter = 200)
 
 # saveRDS(res, file = "/home/annihong/projects/simres/multilevel_p2/sandbox_res_n20_corr.rds")
 
@@ -134,12 +134,12 @@ dim(stan_data$rho_group_covariates_idx) <- c(1)
 #dim(stan_data$cross_mu_group_covariates_idx) <- c(0)
 dim(stan_data$cross_rho_group_covariates_idx) <- c(1)
 
-res <- rstan::stan(file = "/home/annihong/projects/multip2/inst/stan/mutilevel_multiplex_p2.stan", data = stan_data, chains = 1, iter = 200)
+res <- rstan::stan(file = "/home/annihong/projects/multip2/inst/stan/mutilevel_multiplex_p2.stan", data = stan_data, chains = 1, iter = 100)
 
 stan_data
 stan_data$L = L
 
-
-
+s <- summary(res)$summary
+s[grep("Sigma", rownames(s)),c(1)]
 
 
