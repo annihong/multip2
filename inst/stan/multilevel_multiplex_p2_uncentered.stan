@@ -267,11 +267,11 @@ transformed parameters{
 
 
         if (D_within[t,3] > 0) {
-          alpha_fixed = alpha_covariates[,idx_a[1]:idx_a[2]] * alpha_fixed_coef[idx_a[1]:idx_a[2]];
+          alpha_fixed = alpha_covariates[idx_nl[1]:idx_nl[2],idx_a[1]:idx_a[2]] * alpha_fixed_coef[idx_a[1]:idx_a[2]];
         }
         
         if (D_within[t,4] > 0) {
-          beta_fixed = beta_covariates[,idx_b[1]:idx_b[2]] * beta_fixed_coef[idx_b[1]:idx_b[2]];
+          beta_fixed = beta_covariates[idx_nl[1]:idx_nl[2] ,idx_b[1]:idx_b[2]] * beta_fixed_coef[idx_b[1]:idx_b[2]];
         }
         
         alpha[,t] = C[,1 + 2 * (t - 1)] + alpha_fixed;

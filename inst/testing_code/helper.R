@@ -24,7 +24,8 @@ flatten_dyad_covar <- function(covars) {
 generate_stan_data_list <- function(L, n_l_seq, L_networks, layer_covar = FALSE) {
    stan_data_list <- lapply(1:L, function(l) {
     n_l = n_l_seq[l]
-    dyad_covar <- list("dyad_covar1" = matrix(runif(n_l*n_l), nrow=n_l, ncol=n_l))
+    dyad_covar <- list("dyad_covar1" = matrix(runif(n_l*n_l), nrow=n_l, ncol=n_l), 
+                       "dyad_covar2" = matrix(runif(n_l*n_l), nrow=n_l, ncol=n_l))
     actor_covar <- matrix(runif(n_l*2), nrow=n_l, ncol=2)
     colnames(actor_covar) <- c("actor_covar1", "actor_covar2")
     actor_covar <- as.data.frame(actor_covar)
@@ -33,7 +34,8 @@ generate_stan_data_list <- function(L, n_l_seq, L_networks, layer_covar = FALSE)
     m_empty <- Mp2Model(dep_net, dyad_covar = dyad_covar, actor_covar = actor_covar)
     if (layer_covar) {
         m_empty <- update_covar(m_empty, layer_1 = "network1", density = "dyad_covar1", sender = "actor_covar1", receiver = "actor_covar2")
-        m_empty <- update_covar(m_empty, layer_1 = "network2", density = "dyad_covar1", sender = "actor_covar1", receiver = "actor_covar2")
+        m_empty <- update_covar(m_empty, layer_1 = "network2", density = c("dyad_covar1", "dyad_covar2"), sender = "actor_covar1", receiver = "actor_covar2")
+        m_empty <- update_covar(m_empty, layer_1= "network1", layer_2 = "network2", cross_density = c("dyad_covar1", "dyad_covar2"), cross_reciprocity = "dyad_covar1")
     }
     create_stan_data(m_empty)$fit_res$stan_data
     })
@@ -122,7 +124,7 @@ add_layer_covar <- function(stan_data) {
     create_dyad_covar <- function(total_num_covar, covar_name) {
         if (total_num_covar > 0) {
             res <- lapply(stan_data_list, function(x) flatten_dyad_covar(x[[covar_name]]))
-            res <- do.call(cbind, res)
+            res <- t(do.call(cbind, res))
         } else {
             res <- matrix(, ncol = 0, nrow = sum(stan_data$N_covar))
         }
