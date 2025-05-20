@@ -54,50 +54,58 @@ generate_multilevel_stan_data <- function(stan_data_list){
     return(stan_data)
 }
 
-add_group_covar <- function(stan_data) {
+correct_dim <- function(x) {
+    if (length(x) != 0) {
+        dim(x) <- c(length(x))
+    }
+    return(x)
+}
+
+add_group_covar <- function(stan_data, group_covariates=NULL, D_group_within=NULL, D_group_cross=NULL, mu_group_covariates_idx=numeric(0), rho_group_covariates_idx=numeric(0), cross_mu_group_covariates_idx=numeric(0), cross_rho_group_covariates_idx=numeric(0)) {
+    create_covar_sd_prior <- function(covar_idx) {
+        if (length(covar_idx) > 0) {
+            res <- sapply(covar_idx, function(x) 10/sd(stan_data$group_covariates[,x]))
+            res <- correct_dim(res)
+            return(res)
+        } else {
+            return(numeric(0))
+        }
+    }
+
+
     t = stan_data$T
     H = stan_data$H
     L = stan_data$L
-    stan_data$p_group <- 0
-    stan_data$group_covariates <- matrix(, nrow = L, ncol = stan_data$p_group)
+    if (is.null(group_covariates)) {
+        group_covariates <- matrix(, nrow=L, ncol=0)
+    }
+    stan_data$group_covariates <- group_covariates
+    stan_data$p_group <- ncol(stan_data$group_covariates)
 
-    stan_data$D_group_within <- matrix(rep(0, 2*t), nrow=2, ncol=t) 
-    stan_data$D_group_cross <- matrix(rep(0, 2*H), nrow=2, ncol=H)
-    stan_data$mu_group_covariates_idx <- numeric(sum(stan_data$D_group_within[1,]))
-    stan_data$rho_group_covariates_idx <- numeric(sum(stan_data$D_group_within[2,]))
-    stan_data$cross_mu_group_covariates_idx <- numeric(sum(stan_data$D_group_cross[1,]))
-    stan_data$cross_rho_group_covariates_idx <- numeric(sum(stan_data$D_group_cross[2,]))
+    if (is.null(D_group_within)) {
+        D_group_within <- matrix(0, nrow=2, ncol=t)
+    }
+    stan_data$D_group_within <- D_group_within
 
-    # stan_data$mu_group_covariates_idx <- c(1,1)
-    # stan_data$rho_group_covariates_idx <- 2
-    # stan_data$cross_rho_group_covariates_idx <- 1
-    # stan_data$cross_mu_group_covariates_idx <- numeric(0)
-    # dim(stan_data$mu_group_covariates_idx) <- c(2)
-    # dim(stan_data$rho_group_covariates_idx) <- c(1)
-    # #dim(stan_data$cross_mu_group_covariates_idx) <- c(0)
-    # dim(stan_data$cross_rho_group_covariates_idx) <- c(1)
+    if (is.null(D_group_cross)) {
+        D_group_cross <- matrix(0, nrow=2, ncol=H)
+    }
+    stan_data$D_group_cross <- D_group_cross
 
+    stan_data$mu_group_covariates_idx <- correct_dim(mu_group_covariates_idx)
+    stan_data$rho_group_covariates_idx <- correct_dim(rho_group_covariates_idx)
+    stan_data$cross_mu_group_covariates_idx <- correct_dim(cross_mu_group_covariates_idx)
+    stan_data$cross_rho_group_covariates_idx <- correct_dim(cross_rho_group_covariates_idx)
 
-    stan_data$mu_group_covariates_mean_prior <- rep(0, sum(stan_data$D_group_within[1,]))
-    stan_data$rho_group_covariates_mean_prior <- rep(0, sum(stan_data$D_group_within[2,]))
-    stan_data$cross_mu_group_covariates_mean_prior <- rep(0, sum(stan_data$D_group_cross[1,]))
-    stan_data$cross_rho_group_covariates_mean_prior <- rep(0, sum(stan_data$D_group_cross[2,]))
+    stan_data$mu_group_covariates_mean_prior <- correct_dim(rep(0, sum(stan_data$D_group_within[1,])))
+    stan_data$rho_group_covariates_mean_prior <- correct_dim(rep(0, sum(stan_data$D_group_within[2,])))
+    stan_data$cross_mu_group_covariates_mean_prior <- correct_dim(rep(0, sum(stan_data$D_group_cross[1,])))
+    stan_data$cross_rho_group_covariates_mean_prior <- correct_dim(rep(0, sum(stan_data$D_group_cross[2,])))
 
-    # dim(stan_data$rho_group_covariates_mean_prior) <- c(1)
-    # #dim(stan_data$cross_mu_group_covariates_idx) <- c(0)
-    # dim(stan_data$cross_rho_group_covariates_mean_prior) <- c(1)
-
-    # stan_data$mu_group_covariates_sd_prior <- sapply(stan_data$mu_group_covariates_idx, function(x) 10/sd(stan_data$group_covariates[,x]))
-    # stan_data$rho_group_covariates_sd_prior <- sapply(stan_data$rho_group_covariates_idx, function(x) 10/sd(stan_data$group_covariates[,x]))
-    # stan_data$cross_rho_group_covariates_sd_prior <-sapply(stan_data$cross_rho_group_covariates_idx, function(x) 10/sd(stan_data$group_covariates[,x]))
-
-    stan_data$mu_group_covariates_sd_prior <-  numeric(0)
-    stan_data$rho_group_covariates_sd_prior <-  numeric(0)
-    stan_data$cross_mu_group_covariates_sd_prior <- numeric(0)
-    stan_data$cross_rho_group_covariates_sd_prior <-numeric(0)
-
-    # dim(stan_data$rho_group_covariates_sd_prior) <- c(1)
-    # dim(stan_data$cross_rho_group_covariates_sd_prior) <- c(1)
+    stan_data$mu_group_covariates_sd_prior <- create_covar_sd_prior(stan_data$mu_group_covariates_idx)
+    stan_data$rho_group_covariates_sd_prior <- create_covar_sd_prior(stan_data$rho_group_covariates_idx)
+    stan_data$cross_mu_group_covariates_sd_prior <- create_covar_sd_prior(stan_data$cross_mu_group_covariates_idx)
+    stan_data$cross_rho_group_covariates_sd_prior <- create_covar_sd_prior(stan_data$cross_rho_group_covariates_idx)
     return(stan_data)
 }
 
