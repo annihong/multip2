@@ -61,7 +61,7 @@ cross_rho_group_covariates_idx <- numeric(0)
 
 stan_data_list <- generate_stan_data_list(L, n_l_seq, L_networks, layer_covar = layer_covar)
 stan_data <- generate_multilevel_stan_data(stan_data_list)
-stan_data <- add_layer_covar(stan_data)
+stan_data <- add_layer_covar(stan_data, stan_data_list)
 if (group_covar) {
     stan_data <- add_group_covar(stan_data, group_covariates, D_group_within, D_group_cross,
                               mu_group_covariates_idx, rho_group_covariates_idx,
