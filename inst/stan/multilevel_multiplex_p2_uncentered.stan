@@ -19,8 +19,15 @@ functions  {
         }
         return res;
       }
-  }
-
+      
+      //given the number of actors in a group, index i and index j, find the index of the flattened dyadic covariates for group l
+      int find_dyadic_covar_l_idx(int n_l, int i, int j) {
+         int res = (i - 1) * (n_l - 1);
+         int r = j < i ? j : j - 1;
+         res += r;
+         return res;
+       }
+      }
 data {
   int<lower=0> prior_sim; //boolean for whether to simulate from priors (1) or fit the actual model (0)
   int<lower=0> network_sim; //boolean for whether to draw dyadic outcomes from the posterior, 1 yes and 0 no
@@ -39,15 +46,17 @@ data {
   //adding covariates to multiplex p2
   int<lower=0> D_within[T, 4]; // X[t, 1:4]  of covariates for mu_t, rho_t, alpha_t, beta_t
   int<lower=0> D_cross[H, 2]; // X[h, 1:2] of covar for cross_mu_h, cross_rho_h
+  int<lower=0> N_covar[L]; // N_covar[l] = n_l(n_l - 1) for each group l
   
-  vector[sum(D_within[,1])] mu_covariates[n[1], n[1]]; // for mu  
-  vector[sum(D_within[,2])] rho_covariates[n[1], n[1]]; // for rho
-  matrix[n[1],sum(D_within[,3])] alpha_covariates; // for alpha
-  matrix[n[1],sum(D_within[,4])] beta_covariates; // for beta
+  vector[sum(D_within[,1])] mu_covariates[sum(N_covar)]; // for mu  
+  vector[sum(D_within[,2])] rho_covariates[sum(N_covar)]; // for rho
+  matrix[sum(n),sum(D_within[,3])] alpha_covariates; // for alpha
+  matrix[sum(n),sum(D_within[,4])] beta_covariates; // for beta
 
   
-  vector[H != 0 ? sum(D_cross[,1]) : 0] cross_mu_covariates[n[1], n[1]];
-  vector[H != 0 ? sum(D_cross[,2]) : 0] cross_rho_covariates[n[1], n[1]];
+  vector[H != 0 ? sum(D_cross[,1]) : 0] cross_mu_covariates[sum(N_covar)];
+  vector[H != 0 ? sum(D_cross[,2]) : 0] cross_rho_covariates[sum(N_covar)];
+
 
 // group level covariates
 int<lower=0> p_group; // total number of group level covariates
@@ -247,6 +256,7 @@ transformed parameters{
       vector[n[l]] alpha_fixed = rep_vector(0,n[l]);
       vector[n[l]] beta_fixed = rep_vector(0,n[l]);
       int idx_nl[2] = find_start_end(n,l);
+      int idx_N_covar_l[2] = find_start_end(N_covar,l);
       C = (diag_pre_multiply(sigma, L_corr) * z[,idx_nl[1]:idx_nl[2]])';
       
 
@@ -257,11 +267,11 @@ transformed parameters{
 
 
         if (D_within[t,3] > 0) {
-          alpha_fixed = alpha_covariates[,idx_a[1]:idx_a[2]] * alpha_fixed_coef[idx_a[1]:idx_a[2]];
+          alpha_fixed = alpha_covariates[idx_nl[1]:idx_nl[2],idx_a[1]:idx_a[2]] * alpha_fixed_coef[idx_a[1]:idx_a[2]];
         }
         
         if (D_within[t,4] > 0) {
-          beta_fixed = beta_covariates[,idx_b[1]:idx_b[2]] * beta_fixed_coef[idx_b[1]:idx_b[2]];
+          beta_fixed = beta_covariates[idx_nl[1]:idx_nl[2] ,idx_b[1]:idx_b[2]] * beta_fixed_coef[idx_b[1]:idx_b[2]];
         }
         
         alpha[,t] = C[,1 + 2 * (t - 1)] + alpha_fixed;
@@ -289,20 +299,26 @@ transformed parameters{
     
               real within_terms = 0;
               real cross_terms = 0;
+              int idx_ij_dyad = idx_N_covar_l[1] + find_dyadic_covar_l_idx(n_l, i, j) - 1;
+              int idx_ji_dyad = idx_N_covar_l[1] + find_dyadic_covar_l_idx(n_l, j, i) - 1;
               
               for (t in 1:T) {
                 real nt = ceil(k / 4^(t - 1));
                 real score = fmod(nt,4);
-                int idx_mu[2] = find_start_end(D_within[,1],t);
-                int idx_rho[2] = find_start_end(D_within[,2],t);
+
 
                 M[t,] = [(score == 2 || score == 0),(score == 3 || score == 0)];
                 
-                mu_ij = D_within[t,1] > 0 ? dot_product(mu_covariates[i,j][idx_mu[1]:idx_mu[2]], mu_fixed_coef[idx_mu[1]:idx_mu[2]]) : 0;
-                mu_ji = D_within[t,1] > 0 ? dot_product(mu_covariates[j,i][idx_mu[1]:idx_mu[2]], mu_fixed_coef[idx_mu[1]:idx_mu[2]]) : 0;
-                rho_ij = D_within[t,2] > 0 ? dot_product(rho_covariates[i,j][idx_rho[1]:idx_rho[2]], rho_fixed_coef[idx_rho[1]:idx_rho[2]]) : 0;
-              
+                if (D_within[t,1] > 0) {
+                    int idx_mu[2] = find_start_end(D_within[,1],t);
+                    mu_ij = dot_product(mu_covariates[idx_ij_dyad][idx_mu[1]:idx_mu[2]], mu_fixed_coef[idx_mu[1]:idx_mu[2]]);
+                    mu_ji = dot_product(mu_covariates[idx_ji_dyad][idx_mu[1]:idx_mu[2]], mu_fixed_coef[idx_mu[1]:idx_mu[2]]);
+                }
 
+                if (D_within[t,2] > 0) {
+                  int idx_rho[2] = find_start_end(D_within[,2],t);
+                  rho_ij = dot_product(rho_covariates[idx_ij_dyad][idx_rho[1]:idx_rho[2]], rho_fixed_coef[idx_rho[1]:idx_rho[2]]);
+                }
               //print("rho dot:", dot_product(rho_covariates[i,j][idx_rho[1]:idx_rho[2]], rho_fixed_coef[idx_rho[1]:idx_rho[2]]));
               
                 within_terms += M[t,1]*(alpha[i,t] + beta[j,t] + mu_random[t, l] + mu_group_fixed[t,l] +  mu_ij); 
@@ -317,13 +333,15 @@ transformed parameters{
                 int net_a = layer_pairs[h,1];
                 int net_b = layer_pairs[h,2];
                 
-                int idx_mu[2] = find_start_end(D_cross[,1],h);
-                int idx_rho[2] = find_start_end(D_cross[,2],h);
+                if (D_cross[h,1] > 0) {
+                  int idx_c_mu[2] = find_start_end(D_cross[,1],h);
+                  cross_mu_ij = dot_product(cross_mu_covariates[idx_ij_dyad][idx_c_mu[1]:idx_c_mu[2]],cross_mu_fixed_coef[idx_c_mu[1]:idx_c_mu[2]]);
+                }
 
-
-                cross_mu_ij = D_cross[h,1] > 0 ? dot_product(cross_mu_covariates[i,j][idx_mu[1]:idx_mu[2]],cross_mu_fixed_coef[idx_mu[1]:idx_mu[2]]): 0;
-                cross_rho_ij = D_cross[h,2] > 0 ? dot_product(cross_rho_covariates[i,j][idx_rho[1]:idx_rho[2]], cross_rho_fixed_coef[idx_rho[1]:idx_rho[2]]) : 0;
-                  
+                if (D_cross[h,2] > 0) {
+                  int idx_c_rho[2] = find_start_end(D_cross[,2],h);
+                  cross_rho_ij = dot_product(cross_rho_covariates[idx_ij_dyad][idx_c_rho[1]:idx_c_rho[2]], cross_rho_fixed_coef[idx_c_rho[1]:idx_c_rho[2]]);
+                }
                   
                 cross_terms += (M[net_a,1] * M[net_b,1] + M[net_a,2] * M[net_b,2]) * (cross_mu_random[h, l] + cross_mu_group_fixed[h,l] + cross_mu_ij);
                 cross_terms += (M[net_a,1] * M[net_b,2] + M[net_a,2] * M[net_b,1]) * (cross_rho_random[h, l]+ cross_rho_group_fixed[h,l] + cross_rho_ij);
@@ -350,25 +368,11 @@ transformed parameters{
 model {
   // end of the x_beta calculation
 
-  for (i in 1:T) {
-    mu[i] ~ normal(mu_mean_prior[i],mu_sd_prior[i]);
-    rho[i] ~ normal(rho_mean_prior[i],rho_sd_prior[i]);
-  }
-
-  for (i in 1:H) {
-    cross_mu[i] ~ normal(cross_mu_mean_prior[i],cross_mu_sd_prior[i]);
-    cross_rho[i] ~ normal(cross_rho_mean_prior[i],cross_rho_sd_prior[i]);
-  }
-   
-  //for random actor effects:
-  to_vector(z) ~ std_normal();
-
-  L_corr ~ lkj_corr_cholesky(LJK_eta_prior);
-  sigma ~ inv_gamma(scale_alpha_prior,scale_beta_prior);
-  
 
   
   for (t in 1:T) {
+    mu[t] ~ normal(mu_mean_prior[t],mu_sd_prior[t]);
+    rho[t] ~ normal(rho_mean_prior[t],rho_sd_prior[t]);
     z_mu[t] ~ normal(0, 1);
     z_rho[t] ~ normal(0, 1);
     L_corr_within[t] ~ lkj_corr_cholesky(LJK_eta_prior);
@@ -378,12 +382,19 @@ model {
 
 
   for (h in 1:H) {
+    cross_mu[h] ~ normal(cross_mu_mean_prior[h],cross_mu_sd_prior[h]);
+    cross_rho[h] ~ normal(cross_rho_mean_prior[h],cross_rho_sd_prior[h]);
     z_cross_mu[h] ~ normal(0, 1);
     z_cross_rho[h] ~ normal(0, 1);
     L_corr_cross[h] ~ lkj_corr_cholesky(LJK_eta_prior);
     sigma_cross[h] ~ inv_gamma(scale_alpha_prior,scale_beta_prior);
   }
 
+    //for random actor effects:
+    to_vector(z) ~ std_normal();
+    L_corr ~ lkj_corr_cholesky(LJK_eta_prior);
+    sigma ~ inv_gamma(scale_alpha_prior,scale_beta_prior);
+    
 
   for (i in 1:sum(D_within[,1])) {
     mu_fixed_coef[i] ~ normal(mu_covariates_mean_prior[i],mu_covariates_sd_prior[i]);

@@ -49,9 +49,8 @@ for (i in 1:L) {
     L_networks[[i]] <- dep_net
 }
 
-stan_data_list <- generate_stan_data_list(L, n_l_seq, L_networks)
-stan_data <- generate_multilevel_stan_data(stan_data_list)
-
+layer_covar = TRUE
+group_covar = FALSE
 group_covariates <- matrix(runif(2*L), nrow = L, ncol = 2)
 D_group_within <- matrix(c(2,1,1,0), nrow = 2, ncol = t)
 D_group_cross <- matrix(c(1,0), nrow = 2, ncol = H)
@@ -59,12 +58,17 @@ mu_group_covariates_idx <- c(1, 2,1)
 rho_group_covariates_idx <- c(2)
 cross_mu_group_covariates_idx <- c(1)
 cross_rho_group_covariates_idx <- numeric(0)
-# stan_data <- add_group_covar(stan_data)
-stan_data <- add_group_covar(stan_data, group_covariates, D_group_within, D_group_cross,
+
+stan_data_list <- generate_stan_data_list(L, n_l_seq, L_networks, layer_covar = layer_covar)
+stan_data <- generate_multilevel_stan_data(stan_data_list)
+stan_data <- add_layer_covar(stan_data)
+if (group_covar) {
+    stan_data <- add_group_covar(stan_data, group_covariates, D_group_within, D_group_cross,
                               mu_group_covariates_idx, rho_group_covariates_idx,
                               cross_mu_group_covariates_idx, cross_rho_group_covariates_idx)
-#stan_data <- add_layer_covar(stan_data)
-
+} else {
+    stan_data <- add_group_covar(stan_data)
+}
 
 res <- rstan::stan(file = "/home/annihong/projects/multip2/inst/stan/multilevel_multiplex_p2_uncentered.stan", data = stan_data, chains = 1, iter = 10)
 
@@ -72,9 +76,10 @@ res <- rstan::stan(file = "/home/annihong/projects/multip2/inst/stan/multilevel_
 res <- rstan::stan(file = "/home/annihong/projects/multip2/inst/stan/dev_model.stan", data = stan_data, chains = 1, iter = 10)
 
 s <-  summary(res)$summary
-s[grep("group", rownames(s)),]
+s[grep("coef", rownames(s)),]
 
-
+stan_data$D_within
+stan_data$D_cross
 
 
 

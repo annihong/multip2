@@ -398,7 +398,6 @@ model {
    
   //for random actor effects:
   to_vector(z) ~ std_normal();
-
   L_corr ~ lkj_corr_cholesky(LJK_eta_prior);
   sigma ~ inv_gamma(scale_alpha_prior,scale_beta_prior);
 
