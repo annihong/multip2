@@ -49,16 +49,15 @@ data {
   vector[H != 0 ? sum(D_cross[,1]) : 0] cross_mu_covariates[n[1], n[1]];
   vector[H != 0 ? sum(D_cross[,2]) : 0] cross_rho_covariates[n[1], n[1]];
 
-  // group level covariates
-  int<lower=0> p_group; // total number of group level covariates
-  int<lower=0, upper=p_group> D_group_covar[4]; // number of covar applied to all T and H for [mu, rho, cross_mu, cross_rho]
-  // int<lower=0> D_group_within[T, 2]; // number of group level covariates for each layer
-  // int<lower=0> D_group_cross[H, 2]; // number of group level covariates for each pair of layers
-  matrix[L, p_group] group_covariates; // group level covariates
-  int<lower=0, upper=p_group>  mu_group_covariates_idx[D_group_covar[1]]; // indices of mu group level covariates
-  int<lower=0, upper=p_group>  rho_group_covariates_idx[D_group_covar[2]]; // indices of rho group level covariates
-  int<lower=0, upper=p_group>  cross_mu_group_covariates_idx[D_group_covar[3]]; // indices of cross mu group level covariates
-  int<lower=0, upper=p_group>  cross_rho_group_covariates_idx[D_group_covar[4]]; // indices of cross rho group level covariates
+// group level covariates
+int<lower=0> p_group; // total number of group level covariates
+int<lower=0> D_group_within[2, T]; // number of group level covariates for each layer
+int<lower=0> D_group_cross[2, H]; // number of group level covariates for each pair of layers
+matrix[L, p_group] group_covariates; // group level covariates
+int<lower=0, upper=p_group>  mu_group_covariates_idx[sum(D_group_within[1])]; // indices of mu group level covariates
+int<lower=0, upper=p_group>  rho_group_covariates_idx[sum(D_group_within[2])]; // indices of rho group level covariates
+int<lower=0, upper=p_group>  cross_mu_group_covariates_idx[H != 0 ? sum(D_group_cross[1]) : 0]; // indices of cross mu group level covariates
+int<lower=0, upper=p_group>  cross_rho_group_covariates_idx[H != 0 ? sum(D_group_cross[2]) : 0]; // indices of cross rho group level covariates
 
 
 
@@ -84,6 +83,11 @@ data {
 
   vector[sum(D_within[,2])] rho_covariates_sd_prior;
   vector[sum(D_within[,2])] rho_covariates_mean_prior;
+  vector[sum(D_group_within[1,])] mu_group_covariates_sd_prior;
+  vector[sum(D_group_within[1,])] mu_group_covariates_mean_prior;
+
+  vector[sum(D_group_within[2,])] rho_group_covariates_sd_prior;
+  vector[sum(D_group_within[2,])] rho_group_covariates_mean_prior;
 
   vector[sum(D_within[,3])] alpha_covariates_sd_prior;
   vector[sum(D_within[,3])] alpha_covariates_mean_prior;
@@ -96,6 +100,12 @@ data {
 
   vector[H != 0 ? sum(D_cross[,2]) : 0] cross_rho_covariates_sd_prior;
   vector[H != 0 ? sum(D_cross[,2]) : 0] cross_rho_covariates_mean_prior;
+
+  vector[H != 0 ? sum(D_group_cross[1,]) : 0] cross_mu_group_covariates_sd_prior;
+  vector[H != 0 ? sum(D_group_cross[1,]) : 0] cross_mu_group_covariates_mean_prior;
+
+  vector[H != 0 ? sum(D_group_cross[2,]) : 0] cross_rho_group_covariates_sd_prior;
+  vector[H != 0 ? sum(D_group_cross[2,]) : 0] cross_rho_group_covariates_mean_prior;
 }
 
 parameters {
@@ -115,10 +125,10 @@ parameters {
   vector[H != 0 ? sum(D_cross[,2]) : 0] cross_rho_fixed_coef;
 
   //group level fixed effects:
-  vector[D_group_covar[1]] mu_group_coef[T];   
-  vector[D_group_covar[2]] rho_group_coef[T]; 
-  vector[H != 0 ? D_group_covar[3] : 0] cross_mu_group_coef[H]; 
-  vector[H != 0 ? D_group_covar[4] : 0] cross_rho_group_coef[H];
+  vector[sum(D_group_within[1])] mu_group_coef;   
+  vector[sum(D_group_within[2])] rho_group_coef; 
+  vector[H != 0 ? sum(D_group_cross[1]) : 0] cross_mu_group_coef; 
+  vector[H != 0 ? sum(D_group_cross[2]) : 0] cross_rho_group_coef;
   
   //random actor effects:
   //cov_matrix[2*T] Sigma[L]; // cov matrix used to draw the random actor effects
@@ -184,10 +194,18 @@ transformed parameters{
       mu_random[t,] = C_within[1,] + mu[t];
       rho_random[t,] = C_within[2,] + rho[t];
       // print("mu_group_covariates_idx: ", mu_group_covariates_idx);
-      // print("rho_group_covariates_idx: ", rho_group_covariates_idx);
-      mu_group_fixed[t,] = (group_covariates[,mu_group_covariates_idx] * mu_group_coef[t])';
-      rho_group_fixed[t,] = (group_covariates[,rho_group_covariates_idx] * rho_group_coef[t])';
-      // print("mu_group_fixed: ", mu_group_fixed);
+      // print("rho_group_covariates_idx: ", rho_group_covariates_idx);      
+      
+      if (D_group_within[1,t] > 0) {
+        int idx_mu_group[2] = find_start_end(D_group_within[1],t);
+        mu_group_fixed[t,] = (group_covariates[,mu_group_covariates_idx[idx_mu_group[1]:idx_mu_group[2]]] * mu_group_coef[idx_mu_group[1]:idx_mu_group[2]])';
+      }
+        
+      if (D_group_within[2,t] > 0) {
+        int idx_rho_group[2] = find_start_end(D_group_within[2],t);
+        rho_group_fixed[t,] = (group_covariates[,rho_group_covariates_idx[idx_rho_group[1]:idx_rho_group[2]]] * rho_group_coef[idx_rho_group[1]:idx_rho_group[2]])';
+        }  
+            // print("mu_group_fixed: ", mu_group_fixed);
       // print("rho_group_fixed: ", rho_group_fixed);
       //print(C_within);
     }
@@ -201,12 +219,15 @@ transformed parameters{
       C_cross = (diag_pre_multiply(sigma_cross[h], L_corr_cross[h]) * z_cross_h);
       cross_mu_random[h,] = C_cross[1,] + cross_mu[h];
       cross_rho_random[h,] = C_cross[2,] + cross_rho[h];
-      // print("cross_mu_group_covariates_idx: ", cross_mu_group_covariates_idx);
-      // print("cross_rho_group_covariates_idx: ", cross_rho_group_covariates_idx);
-      cross_mu_group_fixed[h,] = (group_covariates[,cross_mu_group_covariates_idx] * cross_mu_group_coef[h])';
-      cross_rho_group_fixed[h,] = (group_covariates[,cross_rho_group_covariates_idx] * cross_rho_group_coef[h])';
-      // print("cross_mu_group_fixed: ", cross_mu_group_fixed);
-      // print("cross_rho_group_fixed: ", cross_rho_group_fixed);
+      if (D_group_cross[1,h] > 0) {
+        int idx_c_mu_group[2] = find_start_end(D_group_cross[1],h);
+        cross_mu_group_fixed[h,] = (group_covariates[,cross_mu_group_covariates_idx[idx_c_mu_group[1]:idx_c_mu_group[2]]] * cross_mu_group_coef[idx_c_mu_group[1]:idx_c_mu_group[2]])';
+      }
+
+      if (D_group_cross[2,h] > 0) {
+        int idx_c_rho_group[2] = find_start_end(D_group_cross[2],h);
+        cross_rho_group_fixed[h,] = (group_covariates[,cross_rho_group_covariates_idx[idx_c_rho_group[1]:idx_c_rho_group[2]]] * cross_rho_group_coef[idx_c_rho_group[1]:idx_c_rho_group[2]])';
+      }
     }
 
   }
@@ -323,8 +344,8 @@ transformed parameters{
 
 // print("cross_mu_random: ", cross_mu_random);
 // print("cross_rho_random: ", cross_rho_random);
-
 }
+
 
 model {
   // end of the x_beta calculation
@@ -352,8 +373,6 @@ model {
     z_rho[t] ~ normal(0, 1);
     L_corr_within[t] ~ lkj_corr_cholesky(LJK_eta_prior);
     sigma_within[t] ~ inv_gamma(scale_alpha_prior,scale_beta_prior);
-    mu_group_coef[t] ~ normal(0,10);
-    rho_group_coef[t] ~ normal(0,10);
   }
 
 
@@ -363,8 +382,6 @@ model {
     z_cross_rho[h] ~ normal(0, 1);
     L_corr_cross[h] ~ lkj_corr_cholesky(LJK_eta_prior);
     sigma_cross[h] ~ inv_gamma(scale_alpha_prior,scale_beta_prior);
-    cross_mu_group_coef[h] ~ normal(0,10);
-    cross_rho_group_coef[h] ~ normal(0,10);
   }
 
 
@@ -394,7 +411,18 @@ model {
 
   //priors for the group level coefficients
 
-  
+  for (i in 1:sum(D_group_within[1])) {
+    mu_group_coef[i] ~ normal(mu_group_covariates_mean_prior[i],mu_group_covariates_sd_prior[i]);
+  }
+  for (i in 1:sum(D_group_within[2])) {
+    rho_group_coef[i] ~ normal(rho_group_covariates_mean_prior[i],rho_group_covariates_sd_prior[i]);
+  }
+  for (i in 1:sum(D_group_cross[1])) {
+    cross_mu_group_coef[i] ~ normal(cross_mu_group_covariates_mean_prior[i],cross_mu_group_covariates_sd_prior[i]);
+  }
+  for (i in 1:sum(D_group_cross[2])) {
+    cross_rho_group_coef[i] ~ normal(cross_rho_group_covariates_mean_prior[i],cross_rho_group_covariates_sd_prior[i]);
+  }
 
 
   if (prior_sim == 0) {
