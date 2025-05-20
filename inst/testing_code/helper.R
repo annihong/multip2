@@ -51,7 +51,7 @@ generate_multilevel_stan_data <- function(stan_data_list){
     stan_data$obs_idx <- 1:length(stan_data$y_obs) #not used currently, assuming all observations are observed
     stan_data$network_sim = FALSE
     stan_data$prior_sim = FALSE
-   
+
 
     return(stan_data)
 }
@@ -111,7 +111,7 @@ add_group_covar <- function(stan_data, group_covariates=NULL, D_group_within=NUL
     return(stan_data)
 }
 
-add_layer_covar <- function(stan_data) {
+add_layer_covar <- function(stan_data, stan_data_list) {
     create_actor_covar <- function(total_num_covar, covar_name) {
         if (total_num_covar > 0) {
             res <- do.call(rbind, lapply(stan_data_list, function(x) x[[covar_name]]))
@@ -131,21 +131,22 @@ add_layer_covar <- function(stan_data) {
         return(res)
     }
 
-    #combine all the actor covariates:
-    # if (sum(stan_data$D_within[,3]) > 0) {
-    #     stan_data$alpha_covariates <- do.call(rbind, lapply(stan_data_list, function(x) x$alpha_covariates))
-    # } else {
-    #     stan_data$alpha_covariates <- matrix(, ncol = sum(stan_data$D_within[,3]), nrow = sum(stan_data$N))
-    # }
+    aggregate_layer_covar_sd_prior <- function(covar_sd_name) {
+        if (length(stan_data[[covar_sd_name]]) > 0) {
+            res <- do.call(rbind, lapply(stan_data_list, function(x) x[[covar_sd_name]]))
+            res <- correct_dim(colMeans(res))
+        } else {
+            res <- numeric(0)
+        }
 
-    # if (sum(stan_data$D_within[,4]) > 0) {
-    #     stan_data$beta_covariates <- do.call(rbind, lapply(stan_data_list, function(x) x$beta_covariates))
-    # } else {
-    #     stan_data$beta_covariates <- matrix(, ncol = sum(stan_data$D_within[,4]), nrow = sum(stan_data$N))
-    # }
+        return(res)
+
+    }
+
 
     stan_data$alpha_covariates <- create_actor_covar(sum(stan_data$D_within[,3]), "alpha_covariates")
     stan_data$beta_covariates <- create_actor_covar(sum(stan_data$D_within[,4]), "beta_covariates")
+
     #combine all the dyad covariates:
     stan_data$N_covar = n_l_seq*(n_l_seq - 1)
     stan_data$mu_covariates <- create_dyad_covar(sum(stan_data$D_within[,1]), "mu_covariates")
@@ -153,26 +154,13 @@ add_layer_covar <- function(stan_data) {
     stan_data$cross_mu_covariates <- create_dyad_covar(sum(stan_data$D_cross[,1]), "cross_mu_covariates")
     stan_data$cross_rho_covariates <- create_dyad_covar(sum(stan_data$D_cross[,2]), "cross_rho_covariates")
 
-    # if (sum(stan_data$D_within[,1]) > 0) {
-    #    res <- lapply(stan_data_list, function(x) flatten_dyad_covar(x$mu_covariates))
-    #    stan_data$mu_covariates <- do.call(cbind, res)
-    # } else {
-    #     stan_data$mu_covariates <- matrix(, ncol = sum(stan_data$N_covar), nrow = 0)
-    # }
-
-    # if (sum(stan_data$D_within[,2]) > 0) {
-    #     res <- lapply(stan_data_list, function(x) flatten_dyad_covar(x$rho_covariates))
-    #     stan_data$rho_covariates <- do.call(cbind, res)
-    # } else {
-    #     stan_data$rho_covariates <- matrix(, ncol = sum(stan_data$N_covar), nrow = 0)
-    # }
-
-    # if (sum(stan_data$D_cross[,1]) > 0) {
-    #     res <- lapply(stan_data_list, function(x) flatten_dyad_covar(x$cross_mu_covariates))
-    #     stan_data$cross_mu_covariates <- do.call(cbind, res)
-    # } else {
-    #     stan_data$cross_mu_covariates <- matrix(, ncol = sum(stan_data$N_covar), nrow = 0)
-    # }
+    #edit the layer covariate sd prior:
+    stan_data$mu_covariates_sd_prior <- aggregate_layer_covar_sd_prior("mu_covariates_sd_prior")
+    stan_data$rho_covariates_sd_prior <- aggregate_layer_covar_sd_prior("rho_covariates_sd_prior")
+    stan_data$cross_mu_covariates_sd_prior <- aggregate_layer_covar_sd_prior("cross_mu_covariates_sd_prior")
+    stan_data$cross_rho_covariates_sd_prior <- aggregate_layer_covar_sd_prior("cross_rho_covariates_sd_prior")
+    stan_data$alpha_covariates_sd_prior <- aggregate_layer_covar_sd_prior("alpha_covariates_sd_prior")
+    stan_data$beta_covariates_sd_prior <- aggregate_layer_covar_sd_prior("beta_covariates_sd_prior")
 
     return(stan_data)
 }
