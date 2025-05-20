@@ -56,7 +56,7 @@ generate_multilevel_stan_data <- function(stan_data_list){
 
 correct_dim <- function(x) {
     if (length(x) != 0) {
-        dim(x) <- c(1)
+        dim(x) <- c(length(x))
     }
     return(x)
 }
