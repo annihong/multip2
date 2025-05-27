@@ -439,23 +439,22 @@ generated quantities{
   corr_matrix[2] Corr_within[T];
   cov_matrix[2] Sigma_cross[H];
   corr_matrix[2] Corr_cross[H];
-  vector[T] mu_true; // vector of size T for within-network density
-  vector[T] rho_true; // vector of size T for within-network reciprocity
-  vector[H] cross_mu_true; // size H storing cross-network density for each pair of network
-  vector[H] cross_rho_true; // size H storing cross-network reciprocity for each pair of network
+  vector[T] mu_PS; // vector of size T for within-network density
+  vector[T] rho_PS; // vector of size T for within-network reciprocity
+  vector[H] cross_mu_PS; // size H storing cross-network density for each pair of network
+  vector[H] cross_rho_PS; // size H storing cross-network reciprocity for each pair of network
 
-  // matrix[n,2*T] C;
-  // vector[T] PS_mu; //post sweep mu for identifiability
-  // vector[T] A_bar; //average of Ai
-  // vector[T] B_bar; //average of Bi
+  matrix[n,2*T] C;
+  vector[T] A_bar; //average of Ai
+  vector[T] B_bar; //average of Bi
 
 
-  // C = (diag_pre_multiply(sigma, L_corr) * z)';
-  // for (t in 1:T){
-  //   A_bar[t] = mean(C[,1 + 2 * (t - 1)]);
-  //   B_bar[t] = mean(C[,2 + 2 *(t - 1)]);
-  //   PS_mu[t] = mu[t] + A_bar[t] + B_bar[t];
-  // }
+  C = (diag_pre_multiply(sigma, L_corr) * z)';
+  for (t in 1:T){
+    A_bar[t] = mean(C[,1 + 2 * (t - 1)]);
+    B_bar[t] = mean(C[,2 + 2 *(t - 1)]);
+    mu_PS[t] = mu[t] + A_bar[t] + B_bar[t];
+  }
 
   Sigma = diag_pre_multiply(sigma, L_corr) * diag_pre_multiply(sigma, L_corr)';
   Corr = multiply_lower_tri_self_transpose(L_corr);
