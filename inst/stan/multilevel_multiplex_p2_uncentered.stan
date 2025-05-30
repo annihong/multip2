@@ -147,16 +147,16 @@ parameters {
 
   // random within layer effects (the 2*T will change when we include more within layer random effects)
   //cov_matrix[2*L] Sigma_within[T]; 
-  vector<lower=0>[2] sigma_within[T];
-  cholesky_factor_corr[2] L_corr_within[T]; 
+  vector<lower=0>[2 + sum(D_within[1,])] sigma_within[T];
+  cholesky_factor_corr[2 + sum(D_within[1,])] L_corr_within[T]; 
   // vector[L] z_mu[T];
   // vector[L] z_rho[T];
   matrix[2 + sum(D_within[1,]),L] z_within[T]; //assume all layer t has the same number of covariates, so we can use the first layer's covariates to define the size of z_within
 
   // random cross layer effects (the 2*T will change when we include more cross layer random effects)
   //cov_matrix[2*L] Sigma_cross[H]; 
-  vector<lower=0>[2] sigma_cross[H];
-  cholesky_factor_corr[2] L_corr_cross[H];
+  vector<lower=0>[2 + sum(D_cross[1,])] sigma_cross[H];
+  cholesky_factor_corr[2 + sum(D_cross[1,])] L_corr_cross[H];
   // vector[L] z_cross_mu[H];
   // vector[L] z_cross_rho[H];
   matrix[2 + sum(D_cross[1,]), L] z_cross[H]; //assume all layer-pair h has the same number of covariates, so we can use the first layer-pair's covariates to define the size of z_cross
@@ -191,11 +191,13 @@ transformed parameters{
   {
 
     for (t in 1:T) {
-      matrix[L,2] C_within;
+      matrix[L,2 + sum(D_within[1,])] C_within;
       // matrix[2,L] z_within_t = append_col(z_mu[t], z_rho[t])';
       C_within = (diag_pre_multiply(sigma_within[t], L_corr_within[t]) * z_within[t])';
       mu_random[,t] = C_within[,1] + mu[t];
       rho_random[,t] = C_within[,2] + rho[t];
+      // print(dims(C_within));
+      // print("C_within: ", C_within[,3]);
       // print("mu_group_covariates_idx: ", mu_group_covariates_idx);
       // print("rho_group_covariates_idx: ", rho_group_covariates_idx);      
       
@@ -217,7 +219,7 @@ transformed parameters{
     // print("rho_random: ", rho_random);
 
     for (h in 1:H) {
-      matrix[L,2] C_cross;
+      matrix[L,2 + sum(D_cross[1,])] C_cross;
       // matrix[2,L] z_cross_h = append_col(z_cross_mu[h], z_cross_rho[h])';
       C_cross = (diag_pre_multiply(sigma_cross[h], L_corr_cross[h]) * z_cross[h])';
       cross_mu_random[,h] = C_cross[,1] + cross_mu[h];
