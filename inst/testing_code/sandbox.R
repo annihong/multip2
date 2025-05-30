@@ -1,4 +1,4 @@
-setwd("./multip2")
+# setwd("./multip2")
 devtools::load_all()
 library(rstan)
 options(mc.cores = 10)
@@ -49,7 +49,7 @@ for (i in 1:L) {
     L_networks[[i]] <- dep_net
 }
 
-layer_covar = TRUE
+layer_covar = FALSE
 group_covar = TRUE
 group_covariates <- matrix(runif(2*L), nrow = L, ncol = 2)
 D_group_within <- matrix(c(2,1,1,0), nrow = 2, ncol = t)

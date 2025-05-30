@@ -125,7 +125,7 @@ parameters {
   vector[H] cross_rho; // size H storing cross-network reciprocity for each pair of network
 
 
-  //fixed effects:
+  //fixed effects: (aka the overall mean for the covariate coefficients)
   vector[sum(D_within[,1])] mu_fixed_coef;   
   vector[sum(D_within[,2])] rho_fixed_coef; 
   vector[sum(D_within[,3])] alpha_fixed_coef; 
@@ -149,17 +149,17 @@ parameters {
   //cov_matrix[2*L] Sigma_within[T]; 
   vector<lower=0>[2] sigma_within[T];
   cholesky_factor_corr[2] L_corr_within[T]; 
-  vector[L] z_mu[T];
-  vector[L] z_rho[T];
-  //z_within[T] = [z_mu, z_rho]
+  // vector[L] z_mu[T];
+  // vector[L] z_rho[T];
+  matrix[2 + sum(D_within[1,]),L] z_within[T]; //assume all layer t has the same number of covariates, so we can use the first layer's covariates to define the size of z_within
 
   // random cross layer effects (the 2*T will change when we include more cross layer random effects)
   //cov_matrix[2*L] Sigma_cross[H]; 
   vector<lower=0>[2] sigma_cross[H];
   cholesky_factor_corr[2] L_corr_cross[H];
-  vector[L] z_cross_mu[H];
-  vector[L] z_cross_rho[H];
-  //z_cross[H] = [z_cross_mu, z_cross_rho]
+  // vector[L] z_cross_mu[H];
+  // vector[L] z_cross_rho[H];
+  matrix[2 + sum(D_cross[1,]), L] z_cross[H]; //assume all layer-pair h has the same number of covariates, so we can use the first layer-pair's covariates to define the size of z_cross
 
 
 
@@ -174,6 +174,14 @@ transformed parameters{
     matrix[L, H] cross_mu_random;
     matrix[L, H] cross_rho_random;
 
+    //random covariate effects: (aka the overall mean for the covariate coefficients + the zero mean random parts)
+    vector[sum(D_within[,1])] mu_coef[L];   
+    vector[sum(D_within[,2])] rho_coef[L]; 
+    vector[sum(D_within[,3])] alpha_coef[L]; 
+    vector[sum(D_within[,4])] beta_coef[L]; 
+    vector[H != 0 ? sum(D_cross[,1]) : 0] cross_mu_coef[L]; 
+    vector[H != 0 ? sum(D_cross[,2]) : 0] cross_rho_coef[L];    
+
     matrix[L, T] mu_group_fixed = rep_matrix(0, L, T);
     matrix[L, T] rho_group_fixed = rep_matrix(0, L, T);
     matrix[L, H] cross_mu_group_fixed = rep_matrix(0, L, H);
@@ -184,8 +192,8 @@ transformed parameters{
 
     for (t in 1:T) {
       matrix[L,2] C_within;
-      matrix[2,L] z_within_t = append_col(z_mu[t], z_rho[t])';
-      C_within = (diag_pre_multiply(sigma_within[t], L_corr_within[t]) * z_within_t)';
+      // matrix[2,L] z_within_t = append_col(z_mu[t], z_rho[t])';
+      C_within = (diag_pre_multiply(sigma_within[t], L_corr_within[t]) * z_within[t])';
       mu_random[,t] = C_within[,1] + mu[t];
       rho_random[,t] = C_within[,2] + rho[t];
       // print("mu_group_covariates_idx: ", mu_group_covariates_idx);
@@ -210,8 +218,8 @@ transformed parameters{
 
     for (h in 1:H) {
       matrix[L,2] C_cross;
-      matrix[2,L] z_cross_h = append_col(z_cross_mu[h], z_cross_rho[h])';
-      C_cross = (diag_pre_multiply(sigma_cross[h], L_corr_cross[h]) * z_cross_h)';
+      // matrix[2,L] z_cross_h = append_col(z_cross_mu[h], z_cross_rho[h])';
+      C_cross = (diag_pre_multiply(sigma_cross[h], L_corr_cross[h]) * z_cross[h])';
       cross_mu_random[,h] = C_cross[,1] + cross_mu[h];
       cross_rho_random[,h] = C_cross[,2] + cross_rho[h];
 
@@ -254,11 +262,11 @@ transformed parameters{
 
 
         if (D_within[t,3] > 0) {
-          alpha_fixed = alpha_covariates[idx_nl[1]:idx_nl[2],idx_a[1]:idx_a[2]] * alpha_fixed_coef[idx_a[1]:idx_a[2]];
+          alpha_fixed = alpha_covariates[idx_nl[1]:idx_nl[2],idx_a[1]:idx_a[2]] * alpha_coef[l][idx_a[1]:idx_a[2]];
         }
         
         if (D_within[t,4] > 0) {
-          beta_fixed = beta_covariates[idx_nl[1]:idx_nl[2] ,idx_b[1]:idx_b[2]] * beta_fixed_coef[idx_b[1]:idx_b[2]];
+          beta_fixed = beta_covariates[idx_nl[1]:idx_nl[2] ,idx_b[1]:idx_b[2]] * beta_coef[l][idx_b[1]:idx_b[2]];
         }
         
         alpha[,t] = C[,1 + 2 * (t - 1)] + alpha_fixed;
@@ -298,13 +306,13 @@ transformed parameters{
                 
                 if (D_within[t,1] > 0) {
                     int idx_mu[2] = find_start_end(D_within[,1],t);
-                    mu_ij = dot_product(mu_covariates[idx_ij_dyad][idx_mu[1]:idx_mu[2]], mu_fixed_coef[idx_mu[1]:idx_mu[2]]);
-                    mu_ji = dot_product(mu_covariates[idx_ji_dyad][idx_mu[1]:idx_mu[2]], mu_fixed_coef[idx_mu[1]:idx_mu[2]]);
+                    mu_ij = dot_product(mu_covariates[idx_ij_dyad][idx_mu[1]:idx_mu[2]], mu_coef[l][idx_mu[1]:idx_mu[2]]);
+                    mu_ji = dot_product(mu_covariates[idx_ji_dyad][idx_mu[1]:idx_mu[2]], mu_coef[l][idx_mu[1]:idx_mu[2]]);
                 }
 
                 if (D_within[t,2] > 0) {
                   int idx_rho[2] = find_start_end(D_within[,2],t);
-                  rho_ij = dot_product(rho_covariates[idx_ij_dyad][idx_rho[1]:idx_rho[2]], rho_fixed_coef[idx_rho[1]:idx_rho[2]]);
+                  rho_ij = dot_product(rho_covariates[idx_ij_dyad][idx_rho[1]:idx_rho[2]], rho_coef[l][idx_rho[1]:idx_rho[2]]);
                 }
               //print("rho dot:", dot_product(rho_covariates[i,j][idx_rho[1]:idx_rho[2]], rho_fixed_coef[idx_rho[1]:idx_rho[2]]));
               
@@ -322,12 +330,12 @@ transformed parameters{
                 
                 if (D_cross[h,1] > 0) {
                   int idx_c_mu[2] = find_start_end(D_cross[,1],h);
-                  cross_mu_ij = dot_product(cross_mu_covariates[idx_ij_dyad][idx_c_mu[1]:idx_c_mu[2]],cross_mu_fixed_coef[idx_c_mu[1]:idx_c_mu[2]]);
+                  cross_mu_ij = dot_product(cross_mu_covariates[idx_ij_dyad][idx_c_mu[1]:idx_c_mu[2]],cross_mu_coef[l][idx_c_mu[1]:idx_c_mu[2]]);
                 }
 
                 if (D_cross[h,2] > 0) {
                   int idx_c_rho[2] = find_start_end(D_cross[,2],h);
-                  cross_rho_ij = dot_product(cross_rho_covariates[idx_ij_dyad][idx_c_rho[1]:idx_c_rho[2]], cross_rho_fixed_coef[idx_c_rho[1]:idx_c_rho[2]]);
+                  cross_rho_ij = dot_product(cross_rho_covariates[idx_ij_dyad][idx_c_rho[1]:idx_c_rho[2]], cross_rho_coef[l][idx_c_rho[1]:idx_c_rho[2]]);
                 }
                   
                 cross_terms += (M[net_a,1] * M[net_b,1] + M[net_a,2] * M[net_b,2]) * (cross_mu_random[l, h] + cross_mu_group_fixed[l,h] + cross_mu_ij);
@@ -360,8 +368,7 @@ model {
   for (t in 1:T) {
     mu[t] ~ normal(mu_mean_prior[t],mu_sd_prior[t]);
     rho[t] ~ normal(rho_mean_prior[t],rho_sd_prior[t]);
-    z_mu[t] ~ normal(0, 1);
-    z_rho[t] ~ normal(0, 1);
+    to_vector(z_within[t]) ~ std_normal();
     L_corr_within[t] ~ lkj_corr_cholesky(LJK_eta_prior);
     sigma_within[t] ~ inv_gamma(scale_alpha_prior,scale_beta_prior);
   }
@@ -371,8 +378,7 @@ model {
   for (h in 1:H) {
     cross_mu[h] ~ normal(cross_mu_mean_prior[h],cross_mu_sd_prior[h]);
     cross_rho[h] ~ normal(cross_rho_mean_prior[h],cross_rho_sd_prior[h]);
-    z_cross_mu[h] ~ normal(0, 1);
-    z_cross_rho[h] ~ normal(0, 1);
+    to_vector(z_cross[h]) ~ std_normal();
     L_corr_cross[h] ~ lkj_corr_cholesky(LJK_eta_prior);
     sigma_cross[h] ~ inv_gamma(scale_alpha_prior,scale_beta_prior);
   }
