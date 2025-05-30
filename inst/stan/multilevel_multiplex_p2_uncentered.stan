@@ -506,7 +506,7 @@ generated quantities{
 
       cross_mu_PS[h] = cross_mu[h] + cross_mu_random_bar[h];
       cross_rho_PS[h] = cross_rho[h] + cross_rho_random_bar[h];
-      cross_mu_random_PS[,h] = cross_mu_random[,h] - cross_mu_random_bar[h];
+      cross_mu_random_PS[,h] = cross_mu_random[,h] - cross_mu_random_bar[h];s
       cross_rho_random_PS[,h] = cross_rho_random[,h] - cross_rho_random_bar[h];
     }
   }

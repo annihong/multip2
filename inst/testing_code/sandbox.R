@@ -1,4 +1,4 @@
-setwd("./multip2")
+# setwd("./multip2")
 devtools::load_all()
 library(rstan)
 options(mc.cores = 10)
@@ -72,16 +72,17 @@ if (group_covar) {
 
 res <- rstan::stan(file = "./inst/stan/multilevel_multiplex_p2_uncentered.stan", data = stan_data, chains = 4, iter = 1000)
 
+saveRDS(res, file = "/home/annihong/projects/multiplex-social-networks/meeting_notes/res_identifiability.rds")
 
 s <-  summary(res)$summary
 s[grep("PS", rownames(s)),c(1,4,8,9,10)]
 
 
 
-res <- rstan::stan(file = "/home/annihong/projects/multip2/inst/stan/dev_model.stan", data = stan_data, chains = 1, iter = 10)
-s_old[grep("PS", rownames(s_old)),c(1,4,8,9,10)]
-stan_data$D_within
-stan_data$D_cross
+# res <- rstan::stan(file = "/home/annihong/projects/multip2/inst/stan/dev_model.stan", data = stan_data, chains = 1, iter = 10)
+# s_old[grep("PS", rownames(s_old)),c(1,4,8,9,10)]
+# stan_data$D_within
+# stan_data$D_cross
 
 
 
