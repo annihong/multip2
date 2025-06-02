@@ -457,55 +457,61 @@ generated quantities{
   corr_matrix[2] Corr_within[T];
   cov_matrix[2] Sigma_cross[H];
   corr_matrix[2] Corr_cross[H];
-  vector[T] mu_true; // vector of size T for within-network density
-  vector[T] rho_true; // vector of size T for within-network reciprocity
-  vector[H] cross_mu_true; // size H storing cross-network density for each pair of network
-  vector[H] cross_rho_true; // size H storing cross-network reciprocity for each pair of network
-
-  // matrix[n,2*T] C;
-  // vector[T] PS_mu; //post sweep mu for identifiability
-  // vector[T] A_bar; //average of Ai
-  // vector[T] B_bar; //average of Bi
-
-
-  // C = (diag_pre_multiply(sigma, L_corr) * z)';
-  // for (t in 1:T){
-  //   A_bar[t] = mean(C[,1 + 2 * (t - 1)]);
-  //   B_bar[t] = mean(C[,2 + 2 *(t - 1)]);
-  //   PS_mu[t] = mu[t] + A_bar[t] + B_bar[t];
-  // }
+  vector[T] mu_PS; // vector of size T for within-network density
+  vector[T] rho_PS; // vector of size T for within-network reciprocity
+  vector[H] cross_mu_PS; // size H storing cross-network density for each pair of network
+  vector[H] cross_rho_PS; // size H storing cross-network reciprocity for each pair of network
 
   Sigma = diag_pre_multiply(sigma, L_corr) * diag_pre_multiply(sigma, L_corr)';
   Corr = multiply_lower_tri_self_transpose(L_corr);
+ 
+  #for mu_true[T]
+  real A_bar[T];
+  real B_bar[T];
+  real mu_random_bar[T];
+  real rho_random_bar[T];
+  real cross_mu_random_bar[H];
+  real cross_rho_random_bar[H];
 
+  {
+    matrix[L,T] A_bar_temp;
+    matrix[L,T] B_bar_temp;
+    for (l in 1:L) {
+      matrix[n[l],2*T] C; // for each actor, there are 2 * T number of random actor effects (two per network)
+      int idx_nl[2] = find_start_end(n,l);
+      C = (diag_pre_multiply(sigma, L_corr) * z[,idx_nl[1]:idx_nl[2]])';
+      for (t in 1:T){
+        A_bar_temp[l,t] = mean(C[,1 + 2 * (t - 1)]);
+        B_bar_temp[l,t] = mean(C[,2 + 2 *(t - 1)]);
+      }
+    }
+  }
 
-    
   for (t in 1:T) {
-    vector[2] z_means = [mu[t], rho[t]]';
-    vector[2] z_means_true;
-
+    matrix[2,L] C_within;
+    matrix[2,L] z_within_t = append_col(z_mu[t], z_rho[t])';
     Sigma_within[t] = diag_pre_multiply(sigma_within[t], L_corr_within[t]) * diag_pre_multiply(sigma_within[t], L_corr_within[t])';
     Corr_within[t] = multiply_lower_tri_self_transpose(L_corr_within[t]);
-
-    z_means_true = diag_pre_multiply(sigma_within[t], L_corr_within[t]) * z_means;
-    mu_true[t] = mu[t] + mean(mu_random[t,]);
-    rho_true[t] = rho[t] + mean(rho_random[t,]);
-    // print("z_means_true: ", z_means_true);
     
+    C_within = (diag_pre_multiply(sigma_within[t], L_corr_within[t]) * z_within_t);
+
+    mu_random_bar[t] = mean(C_within[1,]);
+    rho_random_bar[t] = mean(C_within[2,]);
+    A_bar[t] = mean(A_bar_temp[,t]);
+    B_bar[t] = mean(B_bar_temp[,t]);
 
   }
 
   for (h in 1:H) {
-    vector[2] z_means = [cross_mu[h], cross_rho[h]]';
-    vector[2] z_means_true;
+    matrix[2,L] C_cross;
+    matrix[2,L] z_cross_h = append_col(z_cross_mu[h], z_cross_rho[h])';
 
     Sigma_cross[h] = diag_pre_multiply(sigma_cross[h], L_corr_cross[h]) * diag_pre_multiply(sigma_cross[h], L_corr_cross[h])';
     Corr_cross[h] = multiply_lower_tri_self_transpose(L_corr_cross[h]);
-
-    z_means_true = diag_pre_multiply(sigma_cross[h], L_corr_cross[h]) * z_means;
-    cross_mu_true[h] = cross_mu[h] + mean(cross_mu_random[h,]);
-    cross_rho_true[h] = cross_rho[h] + mean(cross_rho_random[h,]);
-    // print("z_means_true: ", z_means_true);
+    
+    C_cross = (diag_pre_multiply(sigma_cross[h], L_corr_cross[h]) * z_cross_h);
+    cross_mu_random_bar[h] = mean(C_cross[1,]);
+    cross_rho_random_bar[h] = mean(C_cross[2,]);
   }
 
   // start of the x_beta calculation
