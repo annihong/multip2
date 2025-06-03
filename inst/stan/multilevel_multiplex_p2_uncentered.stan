@@ -175,12 +175,12 @@ transformed parameters{
     matrix[L, H] cross_rho_random;
 
     //random covariate effects: (aka the overall mean for the covariate coefficients + the zero mean random parts)
-    vector[sum(D_within[,1])] mu_coef[L];   
-    vector[sum(D_within[,2])] rho_coef[L]; 
-    vector[sum(D_within[,3])] alpha_coef[L]; 
-    vector[sum(D_within[,4])] beta_coef[L]; 
-    vector[H != 0 ? sum(D_cross[,1]) : 0] cross_mu_coef[L]; 
-    vector[H != 0 ? sum(D_cross[,2]) : 0] cross_rho_coef[L];    
+    matrix[sum(D_within[,1]), L] mu_coef;   
+    matrix[sum(D_within[,2]), L] rho_coef; 
+    matrix[sum(D_within[,3]), L] alpha_coef; 
+    matrix[sum(D_within[,4]), L] beta_coef; 
+    matrix[H != 0 ? sum(D_cross[,1]) : 0, L] cross_mu_coef; 
+    matrix[H != 0 ? sum(D_cross[,2]) : 0, L] cross_rho_coef;    
 
     matrix[L, T] mu_group_fixed = rep_matrix(0, L, T);
     matrix[L, T] rho_group_fixed = rep_matrix(0, L, T);
@@ -192,12 +192,59 @@ transformed parameters{
 
     for (t in 1:T) {
       matrix[L,2 + sum(D_within[1,])] C_within;
+      int mu_t_C[2] = find_start_end(D_within[1,],1);
+      int rho_t_C[2] = find_start_end(D_within[1,],2);
+      int alpha_t_C[2] = find_start_end(D_within[1,],3);
+      int beta_t_C[2] = find_start_end(D_within[1,],4);
+
+      int mu_idx_t[2] = find_start_end(D_within[,1],t);
+      int rho_idx_t[2] = find_start_end(D_within[,2],t);
+      int alpha_idx_t[2] = find_start_end(D_within[,3],t);
+      int beta_idx_t[2] = find_start_end(D_within[,4],t);
+      
       // matrix[2,L] z_within_t = append_col(z_mu[t], z_rho[t])';
       C_within = (diag_pre_multiply(sigma_within[t], L_corr_within[t]) * z_within[t])';
+      // print("C_within: ", C_within);
+      // print("t:", t);
+      // print("mu_t_C: ", mu_t_C);
+      // print("rho_t_C: ", rho_t_C);
+      // print("alpha_t_C: ", alpha_t_C);
+      // print("beta_t_C: ", beta_t_C);
+      // print("mu_idx_t: ", mu_idx_t);
+      // print("rho_idx_t: ", rho_idx_t);
+      // print("alpha_idx_t: ", alpha_idx_t);
+      // print("beta_idx_t: ", beta_idx_t);
       mu_random[,t] = C_within[,1] + mu[t];
       rho_random[,t] = C_within[,2] + rho[t];
+      if (mu_idx_t[1] <= mu_idx_t[2]) {
+        // print("mu_coef[mu_idx_t[1]:mu_idx_t[2],] ", mu_coef[mu_idx_t[1]:mu_idx_t[2],]);
+        // print("C_within[,(2 + mu_t_C[1]): (2 + mu_t_C[2])]: ", C_within[,(2 + mu_t_C[1]): (2 + mu_t_C[2])]);
+        mu_coef[mu_idx_t[1]:mu_idx_t[2],] = C_within[,(2 + mu_t_C[1]): (2 + mu_t_C[2])]'; 
+      }
+  
+      // print("mu_coef: ", mu_coef);
+      if (rho_idx_t[1] <= rho_idx_t[2]) {
+        rho_coef[rho_idx_t[1]:rho_idx_t[2],] = C_within[,(2 + rho_t_C[1]): (2 + rho_t_C[2])]'; 
+      }
+
+      if (alpha_idx_t[1] <= alpha_idx_t[2]) {
+        alpha_coef[alpha_idx_t[1]:alpha_idx_t[2],] = C_within[,(2 + alpha_t_C[1]): (2 + alpha_t_C[2])]'; 
+      }
+      if (beta_idx_t[1] <= beta_idx_t[2]) {
+        beta_coef[beta_idx_t[1]:beta_idx_t[2],] = C_within[,(2 + beta_t_C[1]): (2 + beta_t_C[2])]'; 
+      }
+      // rho_coef[rho_idx_t[1]:rho_idx_t[2],] = C_within[,(2 + rho_t_C[1]): (2 + rho_t_C[2])];
+      // alpha_coef[alpha_idx_t[1]:alpha_idx_t[2],] = C_within[,(2 + alpha_t_C[1]): (2 + alpha_t_C[2])];
+      // beta_coef[beta_idx_t[1]:beta_idx_t[2],] = C_within[,(2 + beta_t_C[1]): (2 + beta_t_C[2])];
+
+
       // print(dims(C_within));
-      // print("C_within: ", C_within[,3]);
+      // print("C_within: ", C_within);
+      // print("t:", t);
+      // print("mu_coef: ", mu_coef);
+      // print("rho_coef: ", rho_coef);
+      // print("alpha_coef: ", alpha_coef);
+      // print("beta_coef: ", beta_coef);
       // print("mu_group_covariates_idx: ", mu_group_covariates_idx);
       // print("rho_group_covariates_idx: ", rho_group_covariates_idx);      
       
@@ -220,10 +267,23 @@ transformed parameters{
 
     for (h in 1:H) {
       matrix[L,2 + sum(D_cross[1,])] C_cross;
-      // matrix[2,L] z_cross_h = append_col(z_cross_mu[h], z_cross_rho[h])';
+      int cross_mu_h_C[2] = find_start_end(D_cross[1,],1);
+      int cross_rho_h_C[2] = find_start_end(D_cross[1,],2);
+
+      int cross_mu_idx_h[2] = find_start_end(D_cross[,1],h);
+      int cross_rho_idx_h[2] = find_start_end(D_cross[,2],h);
+      
       C_cross = (diag_pre_multiply(sigma_cross[h], L_corr_cross[h]) * z_cross[h])';
       cross_mu_random[,h] = C_cross[,1] + cross_mu[h];
       cross_rho_random[,h] = C_cross[,2] + cross_rho[h];
+
+      if (cross_mu_idx_h[1] <= cross_mu_idx_h[2]) {
+        cross_mu_coef[cross_mu_idx_h[1]:cross_mu_idx_h[2],] = C_cross[,(2 + cross_mu_h_C[1]): (2 + cross_mu_h_C[2])]'; 
+      }
+
+      if (cross_rho_idx_h[1] <= cross_rho_idx_h[2]) {
+        cross_rho_coef[cross_rho_idx_h[1]:cross_rho_idx_h[2],] = C_cross[,(2 + cross_rho_h_C[1]): (2 + cross_rho_h_C[2])]'; 
+      }
 
       if (D_group_cross[1,h] > 0) {
         int idx_c_mu_group[2] = find_start_end(D_group_cross[1],h);
@@ -255,7 +315,12 @@ transformed parameters{
       int idx_nl[2] = find_start_end(n,l);
       int idx_N_covar_l[2] = find_start_end(N_covar,l);
       C = (diag_pre_multiply(sigma, L_corr) * z[,idx_nl[1]:idx_nl[2]])';
-      
+      mu_coef[,l] = mu_coef[,l] + mu_fixed_coef;
+      rho_coef[,l] = rho_coef[,l] + rho_fixed_coef;
+      alpha_coef[,l] = alpha_coef[,l] + alpha_fixed_coef;
+      beta_coef[,l] = beta_coef[,l] + beta_fixed_coef;
+      cross_mu_coef[,l] = cross_mu_coef[,l] + cross_mu_fixed_coef;
+      cross_rho_coef[,l] = cross_rho_coef[,l] + cross_rho_fixed_coef;
 
       // start of looping over T layers to update random actor effects:
       for (t in 1:T){
@@ -264,11 +329,11 @@ transformed parameters{
 
 
         if (D_within[t,3] > 0) {
-          alpha_fixed = alpha_covariates[idx_nl[1]:idx_nl[2],idx_a[1]:idx_a[2]] * alpha_coef[l][idx_a[1]:idx_a[2]];
+          alpha_fixed = alpha_covariates[idx_nl[1]:idx_nl[2],idx_a[1]:idx_a[2]] * alpha_coef[idx_a[1]:idx_a[2], l];
         }
         
         if (D_within[t,4] > 0) {
-          beta_fixed = beta_covariates[idx_nl[1]:idx_nl[2] ,idx_b[1]:idx_b[2]] * beta_coef[l][idx_b[1]:idx_b[2]];
+          beta_fixed = beta_covariates[idx_nl[1]:idx_nl[2] ,idx_b[1]:idx_b[2]] * beta_coef[idx_b[1]:idx_b[2], l];
         }
         
         alpha[,t] = C[,1 + 2 * (t - 1)] + alpha_fixed;
@@ -308,13 +373,13 @@ transformed parameters{
                 
                 if (D_within[t,1] > 0) {
                     int idx_mu[2] = find_start_end(D_within[,1],t);
-                    mu_ij = dot_product(mu_covariates[idx_ij_dyad][idx_mu[1]:idx_mu[2]], mu_coef[l][idx_mu[1]:idx_mu[2]]);
-                    mu_ji = dot_product(mu_covariates[idx_ji_dyad][idx_mu[1]:idx_mu[2]], mu_coef[l][idx_mu[1]:idx_mu[2]]);
+                    mu_ij = dot_product(mu_covariates[idx_ij_dyad][idx_mu[1]:idx_mu[2]], mu_coef[idx_mu[1]:idx_mu[2], l]);
+                    mu_ji = dot_product(mu_covariates[idx_ji_dyad][idx_mu[1]:idx_mu[2]], mu_coef[idx_mu[1]:idx_mu[2], l]);
                 }
 
                 if (D_within[t,2] > 0) {
                   int idx_rho[2] = find_start_end(D_within[,2],t);
-                  rho_ij = dot_product(rho_covariates[idx_ij_dyad][idx_rho[1]:idx_rho[2]], rho_coef[l][idx_rho[1]:idx_rho[2]]);
+                  rho_ij = dot_product(rho_covariates[idx_ij_dyad][idx_rho[1]:idx_rho[2]], rho_coef[idx_rho[1]:idx_rho[2], l]);
                 }
               //print("rho dot:", dot_product(rho_covariates[i,j][idx_rho[1]:idx_rho[2]], rho_fixed_coef[idx_rho[1]:idx_rho[2]]));
               
@@ -332,12 +397,12 @@ transformed parameters{
                 
                 if (D_cross[h,1] > 0) {
                   int idx_c_mu[2] = find_start_end(D_cross[,1],h);
-                  cross_mu_ij = dot_product(cross_mu_covariates[idx_ij_dyad][idx_c_mu[1]:idx_c_mu[2]],cross_mu_coef[l][idx_c_mu[1]:idx_c_mu[2]]);
+                  cross_mu_ij = dot_product(cross_mu_covariates[idx_ij_dyad][idx_c_mu[1]:idx_c_mu[2]],cross_mu_coef[idx_c_mu[1]:idx_c_mu[2],l]);
                 }
 
                 if (D_cross[h,2] > 0) {
                   int idx_c_rho[2] = find_start_end(D_cross[,2],h);
-                  cross_rho_ij = dot_product(cross_rho_covariates[idx_ij_dyad][idx_c_rho[1]:idx_c_rho[2]], cross_rho_coef[l][idx_c_rho[1]:idx_c_rho[2]]);
+                  cross_rho_ij = dot_product(cross_rho_covariates[idx_ij_dyad][idx_c_rho[1]:idx_c_rho[2]], cross_rho_coef[idx_c_rho[1]:idx_c_rho[2],l]);
                 }
                   
                 cross_terms += (M[net_a,1] * M[net_b,1] + M[net_a,2] * M[net_b,2]) * (cross_mu_random[l, h] + cross_mu_group_fixed[l,h] + cross_mu_ij);

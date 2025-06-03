@@ -1,4 +1,4 @@
-# setwd("./multip2")
+#setwd("./multip2")
 devtools::load_all()
 library(rstan)
 options(mc.cores = 10)
@@ -49,7 +49,7 @@ for (i in 1:L) {
     L_networks[[i]] <- dep_net
 }
 
-layer_covar = FALSE
+layer_covar = TRUE
 group_covar = TRUE
 group_covariates <- matrix(runif(2*L), nrow = L, ncol = 2)
 D_group_within <- matrix(c(2,1,1,0), nrow = 2, ncol = t)
@@ -70,19 +70,19 @@ if (group_covar) {
     stan_data <- add_group_covar(stan_data)
 }
 
-res <- rstan::stan(file = "./inst/stan/multilevel_multiplex_p2_uncentered.stan", data = stan_data, chains = 4, iter = 1000)
+res <- rstan::stan(file = "./inst/stan/multilevel_multiplex_p2_uncentered.stan", data = stan_data, chains = 1, iter = 20)
 
 saveRDS(res, file = "/home/annihong/projects/multiplex-social-networks/meeting_notes/res_identifiability.rds")
 
 s <-  summary(res)$summary
-s[grep("PS", rownames(s)),c(1,4,8,9,10)]
+s[grep("coef", rownames(s)),c(1,4,8,9,10)]
 
 
 
 # res <- rstan::stan(file = "/home/annihong/projects/multip2/inst/stan/dev_model.stan", data = stan_data, chains = 1, iter = 10)
 # s_old[grep("PS", rownames(s_old)),c(1,4,8,9,10)]
-# stan_data$D_within
-# stan_data$D_cross
+stan_data$D_within
+stan_data$D_cross
 
 
 

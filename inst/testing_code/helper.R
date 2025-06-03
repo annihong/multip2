@@ -33,7 +33,7 @@ generate_stan_data_list <- function(L, n_l_seq, L_networks, layer_covar = FALSE)
     dep_net <- L_networks[[l]]
     m_empty <- Mp2Model(dep_net, dyad_covar = dyad_covar, actor_covar = actor_covar)
     if (layer_covar) {
-        m_empty <- update_covar(m_empty, layer_1 = "network1", density = "dyad_covar1", sender = "actor_covar1", receiver = "actor_covar2")
+        m_empty <- update_covar(m_empty, layer_1 = "network1", density = c("dyad_covar1", "dyad_covar2"), sender = "actor_covar1", receiver = "actor_covar2")
         m_empty <- update_covar(m_empty, layer_1 = "network2", density = c("dyad_covar1", "dyad_covar2"), sender = "actor_covar1", receiver = "actor_covar2")
         m_empty <- update_covar(m_empty, layer_1= "network1", layer_2 = "network2", cross_density = c("dyad_covar1", "dyad_covar2"), cross_reciprocity = "dyad_covar1")
     }
