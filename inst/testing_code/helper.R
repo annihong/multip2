@@ -42,6 +42,26 @@ generate_stan_data_list <- function(L, n_l_seq, L_networks, layer_covar = FALSE)
     return(stan_data_list)
 }
 
+create_stan_data_per_class <- function(class_id, layer_covar = FALSE) {
+    load(file.path(data_path, paste0(class_id,"_wave_",WAVE,"_cleaned.RData")))
+    dep_net = list(sts =cleaned_data$sts, tst = cleaned_data$tst)
+    is_female = cleaned_data$is_female
+    actor_covar <- data.frame(is_female = is_female[rownames(dep_net$sts)])
+    dyad_covar <- list(same_gender = array(outer(actor_covar$is_female, actor_covar$is_female, "=="), dim = c(nrow(actor_covar), nrow(actor_covar))))
+
+ 
+    m_2 <- Mp2Model(dep_net, dyad_covar = dyad_covar, actor_covar = actor_covar)
+    if (layer_covar) {
+        m_2 <- update_covar(m_2, layer_1 = "sts", receiver = "is_female", sender = "is_female")
+        m_2 <- update_covar(m_2, layer_1 = "tst", receiver = "is_female", sender = "is_female")
+        m_2 <- update_covar(m_2, layer_1 = "sts", layer_2 = "tst", cross_density = "same_gender", cross_reciprocity = "same_gender")
+    }
+    stan_data <- create_stan_data(m_2)$fit_res$stan_data
+    return(stan_data)
+}
+
+
+
 generate_multilevel_stan_data <- function(stan_data_list){
     stan_data <- stan_data_list[[1]]
     stan_data$L = length(stan_data_list)
@@ -148,7 +168,7 @@ add_layer_covar <- function(stan_data, stan_data_list) {
     stan_data$beta_covariates <- create_actor_covar(sum(stan_data$D_within[,4]), "beta_covariates")
 
     #combine all the dyad covariates:
-    stan_data$N_covar = n_l_seq*(n_l_seq - 1)
+    stan_data$N_covar = stan_data$n*(stan_data$n - 1) 
     stan_data$mu_covariates <- create_dyad_covar(sum(stan_data$D_within[,1]), "mu_covariates")
     stan_data$rho_covariates <- create_dyad_covar(sum(stan_data$D_within[,2]), "rho_covariates")
     stan_data$cross_mu_covariates <- create_dyad_covar(sum(stan_data$D_cross[,1]), "cross_mu_covariates")

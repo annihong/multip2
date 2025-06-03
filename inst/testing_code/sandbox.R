@@ -75,7 +75,7 @@ res <- rstan::stan(file = "./inst/stan/multilevel_multiplex_p2_uncentered.stan",
 saveRDS(res, file = "/home/annihong/projects/multiplex-social-networks/meeting_notes/res_identifiability.rds")
 
 s <-  summary(res)$summary
-s[grep("coef", rownames(s)),c(1,4,8,9,10)]
+s[grep("PS", rownames(s)),c(1,4,8,9,10)]
 
 
 
