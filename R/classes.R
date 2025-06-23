@@ -292,6 +292,7 @@ fit.Mp2Model <- function(model_obj, chains = 4, iter = 200, warmup = floor(iter/
 #'
 #' @param model_obj The model object for which the summary is to be created.
 #' @return A list containing the fixed and random effects summaries, along with parameter labels.
+#' @export
 create_summary <- function(model_obj) {
     pair_lab= model_obj$pair_lab
     dep_lab = model_obj$dep_lab
