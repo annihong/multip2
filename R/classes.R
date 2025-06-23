@@ -264,23 +264,22 @@ fit.Mp2Model <- function(model_obj, chains = 4, iter = 200, warmup = floor(iter/
     options(mc.cores =mc.cores)
     rstan::rstan_options(auto_write = auto_write)
     
-    if (fit) {
-        fpath <- system.file("stan", stan_file, package="multip2")
-        p2_fit <- rstan::stan(
-                        file=fpath, 
-                        data = stan_data,
-                        chains = chains,
-                        iter = iter,
-                        warmup = warmup,
-                        thin = thin,
-                        seed = seed, 
-                        ...
-                        )
-        model_obj$fit_res$stan_fit <- p2_fit
-        s <- create_summary(model_obj)
-        model_obj$fit_res$summary <- s$summary
-        model_obj$fit_res$par_labels <- s$par_labels
-    }
+    fpath <- system.file("stan", stan_file, package="multip2")
+    p2_fit <- rstan::stan(
+                    file=fpath, 
+                    data = stan_data,
+                    chains = chains,
+                    iter = iter,
+                    warmup = warmup,
+                    thin = thin,
+                    seed = seed, 
+                    ...
+                    )
+    model_obj$fit_res$stan_fit <- p2_fit
+    s <- create_summary(model_obj)
+    model_obj$fit_res$summary <- s$summary
+    model_obj$fit_res$par_labels <- s$par_labels
+
 
     return(model_obj)
 }
