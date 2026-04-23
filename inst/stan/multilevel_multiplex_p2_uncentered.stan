@@ -46,9 +46,9 @@ data {
   //adding covariates to multiplex p2
   int<lower=0> D_within[T, 4]; // X[t, 1:4]  of covariates for mu_t, rho_t, alpha_t, beta_t
   int<lower=0> D_cross[H, 2]; // X[h, 1:2] of covar for cross_mu_h, cross_rho_h
-  int<lower=0> N_covar[L]; // N_covar[l] = n_l(n_l - 1) for each group l
+  int<lower=0> N_covar[L]; // N_covar[l] = n_l(n_l - 1) for each group l, directed dyads minus self-loops
   
-  vector[sum(D_within[,1])] mu_covariates[sum(N_covar)]; // for mu  
+  vector[sum(D_within[,1])] mu_covariates[sum(N_covar)]; // mu covariates flattened on groups
   vector[sum(D_within[,2])] rho_covariates[sum(N_covar)]; // for rho
   matrix[sum(n),sum(D_within[,3])] alpha_covariates; // for alpha
   matrix[sum(n),sum(D_within[,4])] beta_covariates; // for beta
@@ -60,9 +60,11 @@ data {
 
 // group level covariates
 int<lower=0> p_group; // total number of group level covariates
-int<lower=0> D_group_within[2, T]; // number of group level covariates for each layer
-int<lower=0> D_group_cross[2, H]; // number of group level covariates for each pair of layers
+int<lower=0> D_group_within[2, T]; // number of group level covariates for each layer: row 1 for mu, row 2 for rho (in the future we can add group level covariates for the overall slopes)
+int<lower=0> D_group_cross[2, H]; // number of group level covariates for each pair of layers, row 1 for cross_mu, row 2 for cross_rho
 matrix[L, p_group] group_covariates; // group level covariates
+
+//storing the indices of the group level covariates for each layer/pair of layers, unlike the within-group covariates, we don't repeat the storage of the actual covariates, just the indices. 
 int<lower=0, upper=p_group>  mu_group_covariates_idx[sum(D_group_within[1])]; // indices of mu group level covariates
 int<lower=0, upper=p_group>  rho_group_covariates_idx[sum(D_group_within[2])]; // indices of rho group level covariates
 int<lower=0, upper=p_group>  cross_mu_group_covariates_idx[H != 0 ? sum(D_group_cross[1]) : 0]; // indices of cross mu group level covariates
@@ -81,6 +83,7 @@ int<lower=0, upper=p_group>  cross_rho_group_covariates_idx[H != 0 ? sum(D_group
   vector[H] cross_rho_mean_prior;
   vector[H] cross_rho_sd_prior;
 
+  // hyperpriors for the variance parameters, these are shared for all random effects, maybe in the future we can make them different for actor, within-layer, and cross-layer random effects?
   real scale_alpha_prior;
   real scale_beta_prior;
   real LJK_eta_prior;
@@ -145,30 +148,23 @@ parameters {
   cholesky_factor_corr[2*T] L_corr;
   matrix[2*T, sum(n)] z; // z is flattend on n_l, so that different group can have different number of actors
 
-  // random within layer effects (the 2*T will change when we include more within layer random effects)
-  //cov_matrix[2*L] Sigma_within[T]; 
+  // random within layer effects 
+  // 2 (mu and rho) + number of covariates for mu_t + number of covariates for rho_t + number of covariates for alpha_t + number of covariates for beta_t
   vector<lower=0>[2 + sum(D_within[1,])] sigma_within[T];
   cholesky_factor_corr[2 + sum(D_within[1,])] L_corr_within[T]; 
-  // vector[L] z_mu[T];
-  // vector[L] z_rho[T];
+
   matrix[2 + sum(D_within[1,]),L] z_within[T]; //assume all layer t has the same number of covariates, so we can use the first layer's covariates to define the size of z_within
 
-  // random cross layer effects (the 2*T will change when we include more cross layer random effects)
+  // random cross layer effects 
   //cov_matrix[2*L] Sigma_cross[H]; 
   vector<lower=0>[2 + sum(D_cross[1,])] sigma_cross[H];
   cholesky_factor_corr[2 + sum(D_cross[1,])] L_corr_cross[H];
-  // vector[L] z_cross_mu[H];
-  // vector[L] z_cross_rho[H];
   matrix[2 + sum(D_cross[1,]), L] z_cross[H]; //assume all layer-pair h has the same number of covariates, so we can use the first layer-pair's covariates to define the size of z_cross
-
-
-
-
-
 }
 
 transformed parameters{
     matrix[sum(N),K] x_beta;
+    // param_random stores the random effects for each parameter centered around the overall mean (overall mean + zero mean random part)
     matrix[L, T] mu_random;
     matrix[L, T] rho_random;
     matrix[L, H] cross_mu_random;
@@ -182,6 +178,7 @@ transformed parameters{
     matrix[H != 0 ? sum(D_cross[,1]) : 0, L] cross_mu_coef; 
     matrix[H != 0 ? sum(D_cross[,2]) : 0, L] cross_rho_coef;    
 
+    // The contribution of the group level covariates to the intercepts, covariates times the group_coef
     matrix[L, T] mu_group_fixed = rep_matrix(0, L, T);
     matrix[L, T] rho_group_fixed = rep_matrix(0, L, T);
     matrix[L, H] cross_mu_group_fixed = rep_matrix(0, L, H);
@@ -190,39 +187,33 @@ transformed parameters{
 
   {
 
-    for (t in 1:T) {
+    for (t in 1:T) {//iterate through each layer to update the random within-layer effects and group level fixed effects
       matrix[L,2 + sum(D_within[1,])] C_within;
+      //param_t_C: gives the starting and ending index of the random z for each parameter in the C_within
       int mu_t_C[2] = find_start_end(D_within[1,],1);
       int rho_t_C[2] = find_start_end(D_within[1,],2);
       int alpha_t_C[2] = find_start_end(D_within[1,],3);
       int beta_t_C[2] = find_start_end(D_within[1,],4);
 
+      //idx_t: gives the starting and ending index of the within-group covariates for each parameter 
       int mu_idx_t[2] = find_start_end(D_within[,1],t);
       int rho_idx_t[2] = find_start_end(D_within[,2],t);
       int alpha_idx_t[2] = find_start_end(D_within[,3],t);
       int beta_idx_t[2] = find_start_end(D_within[,4],t);
       
-      // matrix[2,L] z_within_t = append_col(z_mu[t], z_rho[t])';
+      // sampling random within-layer effects
       C_within = (diag_pre_multiply(sigma_within[t], L_corr_within[t]) * z_within[t])';
-      // print("C_within: ", C_within);
-      // print("t:", t);
-      // print("mu_t_C: ", mu_t_C);
-      // print("rho_t_C: ", rho_t_C);
-      // print("alpha_t_C: ", alpha_t_C);
-      // print("beta_t_C: ", beta_t_C);
-      // print("mu_idx_t: ", mu_idx_t);
-      // print("rho_idx_t: ", rho_idx_t);
-      // print("alpha_idx_t: ", alpha_idx_t);
-      // print("beta_idx_t: ", beta_idx_t);
+
+      // begin random effects for the intercepts
       mu_random[,t] = C_within[,1] + mu[t];
       rho_random[,t] = C_within[,2] + rho[t];
+      // end random effects for the intercepts
+
+      // begin adding zero-mean random effects for the covariate coefficients to param_coef layer by layer
       if (mu_idx_t[1] <= mu_idx_t[2]) {
-        // print("mu_coef[mu_idx_t[1]:mu_idx_t[2],] ", mu_coef[mu_idx_t[1]:mu_idx_t[2],]);
-        // print("C_within[,(2 + mu_t_C[1]): (2 + mu_t_C[2])]: ", C_within[,(2 + mu_t_C[1]): (2 + mu_t_C[2])]);
         mu_coef[mu_idx_t[1]:mu_idx_t[2],] = C_within[,(2 + mu_t_C[1]): (2 + mu_t_C[2])]'; 
       }
-  
-      // print("mu_coef: ", mu_coef);
+
       if (rho_idx_t[1] <= rho_idx_t[2]) {
         rho_coef[rho_idx_t[1]:rho_idx_t[2],] = C_within[,(2 + rho_t_C[1]): (2 + rho_t_C[2])]'; 
       }
@@ -232,22 +223,10 @@ transformed parameters{
       }
       if (beta_idx_t[1] <= beta_idx_t[2]) {
         beta_coef[beta_idx_t[1]:beta_idx_t[2],] = C_within[,(2 + beta_t_C[1]): (2 + beta_t_C[2])]'; 
-      }
-      // rho_coef[rho_idx_t[1]:rho_idx_t[2],] = C_within[,(2 + rho_t_C[1]): (2 + rho_t_C[2])];
-      // alpha_coef[alpha_idx_t[1]:alpha_idx_t[2],] = C_within[,(2 + alpha_t_C[1]): (2 + alpha_t_C[2])];
-      // beta_coef[beta_idx_t[1]:beta_idx_t[2],] = C_within[,(2 + beta_t_C[1]): (2 + beta_t_C[2])];
-
-
-      // print(dims(C_within));
-      // print("C_within: ", C_within);
-      // print("t:", t);
-      // print("mu_coef: ", mu_coef);
-      // print("rho_coef: ", rho_coef);
-      // print("alpha_coef: ", alpha_coef);
-      // print("beta_coef: ", beta_coef);
-      // print("mu_group_covariates_idx: ", mu_group_covariates_idx);
-      // print("rho_group_covariates_idx: ", rho_group_covariates_idx);      
+      }  
+      // end adding zero-mean random effects for the covariate coefficients to param_coef layer by layer
       
+      // begin group level fixed effects for the intercepts
       if (D_group_within[1,t] > 0) {
         int idx_mu_group[2] = find_start_end(D_group_within[1],t);
         mu_group_fixed[,t] = (group_covariates[,mu_group_covariates_idx[idx_mu_group[1]:idx_mu_group[2]]] * mu_group_coef[idx_mu_group[1]:idx_mu_group[2]]);
@@ -257,26 +236,30 @@ transformed parameters{
         int idx_rho_group[2] = find_start_end(D_group_within[2],t);
         rho_group_fixed[,t] = (group_covariates[,rho_group_covariates_idx[idx_rho_group[1]:idx_rho_group[2]]] * rho_group_coef[idx_rho_group[1]:idx_rho_group[2]]);
         }  
-            // print("mu_group_fixed: ", mu_group_fixed);
-      // print("rho_group_fixed: ", rho_group_fixed);
-      //print(C_within);
+      // end group level fixed effects for the intercepts
     }
 
-    // print("mu_random: ", mu_random);
-    // print("rho_random: ", rho_random);
 
+    // iterate through each pair of layers to update the random cross-layer effects and group level fixed effects
     for (h in 1:H) {
       matrix[L,2 + sum(D_cross[1,])] C_cross;
+      // param_h_C: gives the starting and ending index of the random z for each parameter in the C_cross
       int cross_mu_h_C[2] = find_start_end(D_cross[1,],1);
       int cross_rho_h_C[2] = find_start_end(D_cross[1,],2);
 
+      //idx_h: gives the starting and ending index of the cross-group covariates for each parameter
       int cross_mu_idx_h[2] = find_start_end(D_cross[,1],h);
       int cross_rho_idx_h[2] = find_start_end(D_cross[,2],h);
       
+      // sampling random cross-layer effects
       C_cross = (diag_pre_multiply(sigma_cross[h], L_corr_cross[h]) * z_cross[h])';
+
+      // begin random effects for the cross-layer intercepts
       cross_mu_random[,h] = C_cross[,1] + cross_mu[h];
       cross_rho_random[,h] = C_cross[,2] + cross_rho[h];
+      // end random effects for the cross-layer intercepts
 
+      //begin adding zero-mean random effects for the cross-layer covariate coefficients to param_coef pair by pair
       if (cross_mu_idx_h[1] <= cross_mu_idx_h[2]) {
         cross_mu_coef[cross_mu_idx_h[1]:cross_mu_idx_h[2],] = C_cross[,(2 + cross_mu_h_C[1]): (2 + cross_mu_h_C[2])]'; 
       }
@@ -284,7 +267,9 @@ transformed parameters{
       if (cross_rho_idx_h[1] <= cross_rho_idx_h[2]) {
         cross_rho_coef[cross_rho_idx_h[1]:cross_rho_idx_h[2],] = C_cross[,(2 + cross_rho_h_C[1]): (2 + cross_rho_h_C[2])]'; 
       }
+      // end adding zero-mean random effects for the cross-layer covariate coefficients to param_coef pair by pair
 
+      // begin group level fixed effects for the cross-layer intercepts
       if (D_group_cross[1,h] > 0) {
         int idx_c_mu_group[2] = find_start_end(D_group_cross[1],h);
         cross_mu_group_fixed[,h] = (group_covariates[,cross_mu_group_covariates_idx[idx_c_mu_group[1]:idx_c_mu_group[2]]] * cross_mu_group_coef[idx_c_mu_group[1]:idx_c_mu_group[2]]);
@@ -294,6 +279,7 @@ transformed parameters{
         int idx_c_rho_group[2] = find_start_end(D_group_cross[2],h);
         cross_rho_group_fixed[,h] = (group_covariates[,cross_rho_group_covariates_idx[idx_c_rho_group[1]:idx_c_rho_group[2]]] * cross_rho_group_coef[idx_c_rho_group[1]:idx_c_rho_group[2]]);
       }
+      // end group level fixed effects for the cross-layer intercepts
     }
 
   }
@@ -303,30 +289,38 @@ transformed parameters{
     for (l in 1:L) {
       int n_l = n[l];
       matrix[n[l],2*T] C; // for each actor, there are 2 * T number of random actor effects (two per network)
+
+      // begin defining the total effects that goes into the probability function:
       matrix[n[l],T] alpha;
-      matrix[n[l],T] beta;
+      matrix[n[l],T] beta; 
       real mu_ij = 0;
       real mu_ji = 0;
       real rho_ij = 0;
       real cross_mu_ij = 0;
       real cross_rho_ij = 0;
-      vector[n[l]] alpha_fixed = rep_vector(0,n[l]);
-      vector[n[l]] beta_fixed = rep_vector(0,n[l]);
-      int idx_nl[2] = find_start_end(n,l);
-      int idx_N_covar_l[2] = find_start_end(N_covar,l);
-      C = (diag_pre_multiply(sigma, L_corr) * z[,idx_nl[1]:idx_nl[2]])';
+      // end defining the total effects that goes into the probability function
+
+      vector[n[l]] alpha_fixed = rep_vector(0,n[l]); // contribution of the covariates to the sender effects (covariates times the coefficients)
+      vector[n[l]] beta_fixed = rep_vector(0,n[l]); // contribution of the covariates to the receiver effects (covariates times the coefficients)
+
+      int idx_nl[2] = find_start_end(n,l); // gives the starting and ending index actors in group l
+      int idx_N_covar_l[2] = find_start_end(N_covar,l); // gives the starting and ending index of the dyadic covariates for group l
+      C = (diag_pre_multiply(sigma, L_corr) * z[,idx_nl[1]:idx_nl[2]])'; //zero-mean random actor effects for group l
+
+      // begin adding the overall slope to the zero-mean random covariate coefficients for group l
+      // param_coef[,l] contains zero-mean random parts only before this step, param_fixed_coef contains the overall slope defined in the parameters block
       mu_coef[,l] = mu_coef[,l] + mu_fixed_coef;
       rho_coef[,l] = rho_coef[,l] + rho_fixed_coef;
       alpha_coef[,l] = alpha_coef[,l] + alpha_fixed_coef;
       beta_coef[,l] = beta_coef[,l] + beta_fixed_coef;
       cross_mu_coef[,l] = cross_mu_coef[,l] + cross_mu_fixed_coef;
       cross_rho_coef[,l] = cross_rho_coef[,l] + cross_rho_fixed_coef;
+      // end adding the overall slope to the zero-mean random covariate coefficients for group l
 
-      // start of looping over T layers to update random actor effects:
+      // within the l loop, start looping over T layers to update random actor effects:
       for (t in 1:T){
         int idx_a[2] = find_start_end(D_within[,3],t);
         int idx_b[2] = find_start_end(D_within[,4],t);
-
 
         if (D_within[t,3] > 0) {
           alpha_fixed = alpha_covariates[idx_nl[1]:idx_nl[2],idx_a[1]:idx_a[2]] * alpha_coef[idx_a[1]:idx_a[2], l];
@@ -341,20 +335,19 @@ transformed parameters{
       }
       // end of looping over T layers to update random actor effects:
       
-      {
+    {
 
-      int counter = sum(N[1:(l-1)]) + 1; //the the counter to start on the first dyad of the group
-      // print("counter: ", counter);
-      // print("l: ", l);
+      int counter = sum(N[1:(l-1)]) + 1; //the the counter to start on the first dyad of the group, so that we know where to put the calculated x_beta values
+      
+
 
       matrix[T,2] M; 
 
         for (i in 1:n_l) {
-          for (j in i:n_l) {
+          for (j in i:n_l) { // enter the i,j dyad
             if (i == j) {
               continue;
             }
-            //if (counter ) ??
 
             // start of looping through all K outcomes:
             for (k in 1:K){
@@ -364,13 +357,14 @@ transformed parameters{
               int idx_ij_dyad = idx_N_covar_l[1] + find_dyadic_covar_l_idx(n_l, i, j) - 1;
               int idx_ji_dyad = idx_N_covar_l[1] + find_dyadic_covar_l_idx(n_l, j, i) - 1;
               
-              for (t in 1:T) {
+              for (t in 1:T) { //we want to convert outcome k into dyadic outcomes for each layer t
                 real nt = ceil(k / 4^(t - 1));
                 real score = fmod(nt,4);
 
 
-                M[t,] = [(score == 2 || score == 0),(score == 3 || score == 0)];
+                M[t,] = [(score == 2 || score == 0),(score == 3 || score == 0)]; // there are only four options in each layer: no edge, i->j, j->i, i<->j
                 
+                // begin adding the contributions of the covariates to the dyadic outcomes since we are looping over ij in each layer t and group l. 
                 if (D_within[t,1] > 0) {
                     int idx_mu[2] = find_start_end(D_within[,1],t);
                     mu_ij = dot_product(mu_covariates[idx_ij_dyad][idx_mu[1]:idx_mu[2]], mu_coef[idx_mu[1]:idx_mu[2], l]);
@@ -381,16 +375,18 @@ transformed parameters{
                   int idx_rho[2] = find_start_end(D_within[,2],t);
                   rho_ij = dot_product(rho_covariates[idx_ij_dyad][idx_rho[1]:idx_rho[2]], rho_coef[idx_rho[1]:idx_rho[2], l]);
                 }
-              //print("rho dot:", dot_product(rho_covariates[i,j][idx_rho[1]:idx_rho[2]], rho_fixed_coef[idx_rho[1]:idx_rho[2]]));
+                // end adding the contributions of the covariates to the dyadic outcomes since we are looping over ij in each layer t and group l.
+
               
+                // intermediate step
                 within_terms += M[t,1]*(alpha[i,t] + beta[j,t] + mu_random[l, t] + mu_group_fixed[l,t] +  mu_ij); 
                 within_terms += M[t,2]*(alpha[j,t] + beta[i,t] + mu_random[l, t] + mu_group_fixed[l,t] + mu_ji); 
                 within_terms += M[t,1]*M[t,2]*(rho_random[l,t] + rho_group_fixed[l,t] + rho_ij);
-                //print("reciprocated: ", M[t,1]*M[t,2]); 
 
                 
               }
-              
+              // end of looping through all T layers to update within_terms
+              // begin looping through all H pairs of layers to update cross_terms
               for (h in 1:H){
                 int net_a = layer_pairs[h,1];
                 int net_b = layer_pairs[h,2];
@@ -408,7 +404,9 @@ transformed parameters{
                 cross_terms += (M[net_a,1] * M[net_b,1] + M[net_a,2] * M[net_b,2]) * (cross_mu_random[l, h] + cross_mu_group_fixed[l,h] + cross_mu_ij);
                 cross_terms += (M[net_a,1] * M[net_b,2] + M[net_a,2] * M[net_b,1]) * (cross_rho_random[l, h]+ cross_rho_group_fixed[l,h] + cross_rho_ij);
               }
+              // end of looping through all H pairs of layers to update cross_terms
               
+              //  we can calculate the x_beta for dyad ij in group l for outcome k
               x_beta[counter,k] = within_terms + cross_terms;
             
             }
@@ -508,10 +506,10 @@ generated quantities{
   int y_tilde[sum(N)];
   cov_matrix[2*T] Sigma;
   corr_matrix[2*T] Corr;
-  cov_matrix[2] Sigma_within[T];
-  corr_matrix[2] Corr_within[T];
-  cov_matrix[2] Sigma_cross[H];
-  corr_matrix[2] Corr_cross[H];
+  cov_matrix[2 + sum(D_within[1,])] Sigma_within[T];
+  corr_matrix[2 + sum(D_within[1,])] Corr_within[T];
+  cov_matrix[2 + sum(D_cross[1,])] Sigma_cross[H];
+  corr_matrix[2 + sum(D_cross[1,])] Corr_cross[H];
   vector[T] mu_PS; // vector of size T for within-network density
   vector[T] rho_PS; // vector of size T for within-network reciprocity
   vector[H] cross_mu_PS; // size H storing cross-network density for each pair of network
@@ -595,4 +593,7 @@ generated quantities{
   }
 
 }
+
+
+
 

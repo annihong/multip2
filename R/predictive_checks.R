@@ -228,8 +228,10 @@ multiplex_gof_baseline <- function(dep_net, sim_nets, return_data = FALSE, descr
         names(net) <- dep_lab
         stats[[i]] <- descriptive_stats(net)
     }
+    
     stats <- do.call(rbind, stats)
     basic_stats <- tidyr::pivot_longer(data.frame(stats), everything(), names_to="var", values_to="sim_stats")
+    basic_stats <- basic_stats %>% mutate(sim_stats = ifelse(is.na(sim_stats), 0, sim_stats))
     basic_stats$var <- factor(basic_stats$var, levels = colnames(stats))
     if (is.null(descriptive_labels)) {
         descriptive_labels <- levels(basic_stats$var)
