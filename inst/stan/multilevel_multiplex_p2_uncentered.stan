@@ -31,6 +31,7 @@ functions  {
 data {
   int<lower=0> prior_sim; //boolean for whether to simulate from priors (1) or fit the actual model (0)
   int<lower=0> network_sim; //boolean for whether to draw dyadic outcomes from the posterior, 1 yes and 0 no
+  int<lower=0> loo_est; //boolean for whether to compute the pointwise log likelihood for PSIS-LOO, 1 yes and 0 no
   int<lower=0> L; //number of groups/repeated obs of the multiplex network 
   int<lower=0> n[L]; //number of actors for each of the L groups
   int<lower=0> N[L]; // number of total dyads for each of the L groups
@@ -504,6 +505,7 @@ model {
 
 generated quantities{
   int y_tilde[sum(N)];
+  vector [sum(N)] log_lik;
   cov_matrix[2*T] Sigma;
   corr_matrix[2*T] Corr;
   cov_matrix[2 + sum(D_within[1,])] Sigma_within[T];
@@ -591,6 +593,14 @@ generated quantities{
       y_tilde[k] = categorical_logit_rng(x_beta[k]');
     }
   }
+
+  if (loo_est == 1) { //obtain the posterior log likelihood for each dyad, we can use this to calculate the loo estimate
+    for (k in 1:sum(N)) {
+      log_lik[k] = categorical_logit_lpmf(y_obs[k] | x_beta[k]');
+    }
+  }
+
+
 
 }
 

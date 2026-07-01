@@ -24,7 +24,7 @@ summary_df <- summary_df %>% left_join(filtered_df, by = c("class_id")) %>% muta
 L = length(class_ids)
 t = 2
 H = 1
-layer_covar = FALSE
+layer_covar = TRUE
 group_covar = TRUE
 
 
@@ -70,7 +70,7 @@ if (layer_covar & group_covar) {
     model_type = "group_only"
 }
 saveRDS(res, file = glue::glue("/home/annihong/projects/multiplex-social-networks/multilevelp2/code/bully1_2000{model_type}.Rds"))
-# saveRDS(stan_data, file = glue::glue("/home/annihong/projects/multiplex-social-networks/multilevelp2/code/stan_data_bully1_2000{ifelse(layer_covar, '_full', '_empty')}.Rds")
+saveRDS(stan_data, file = glue::glue("/home/annihong/projects/multiplex-social-networks/multilevelp2/code/stan_data_bully1_2000{ifelse(layer_covar, '_full', '_empty')}.Rds"))
 
 
 # # fit <- readRDS(file = glue::glue("/home/annihong/projects/multiplex-social-networks/multilevelp2/code/bully1_2000_empty.Rds"))

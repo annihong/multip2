@@ -81,6 +81,7 @@ generate_multilevel_stan_data <- function(stan_data_list){
     stan_data$obs_idx <- 1:length(stan_data$y_obs) #not used currently, assuming all observations are observed
     stan_data$network_sim = FALSE
     stan_data$prior_sim = FALSE
+    stan_data$loo_est = FALSE
 
 
     return(stan_data)
