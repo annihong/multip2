@@ -285,3 +285,6 @@ How it’s your turn!
 m_fit <- m_empty
 #m_fit <- update_covar(m_fit, layer_1 = ..., layer_1 = ..., )
 ```
+
+## Acknowledgement
+This material is based upon work supported by the National Science Foundation under Grant Number SES-2020276. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation.

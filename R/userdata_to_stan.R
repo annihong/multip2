@@ -199,7 +199,8 @@ format_prior <- function(baseline_prior, covariates, data) {
         prior_sd_name = dict_var_name_to_prior_name[[var_name]][2]
 
         prior_mean_val = ifelse(is.null(covariate$mean_prior), 0, covariate$mean_prior)
-        prior_sd_val = ifelse(is.null(covariate$sd_prior), 10/sd(value), covariate$sd_prior)
+        covar_sd = ifelse(sd(value) < 0.1, 0.1, sd(value))
+        prior_sd_val = ifelse(is.null(covariate$sd_prior), 10/covar_sd, covariate$sd_prior)
 
         new_names <- c(names(prior[[prior_mean_name]]), covar_name)
         prior[[prior_mean_name]] <- array(append(prior[[prior_mean_name]], prior_mean_val))
@@ -243,7 +244,7 @@ default_prior_empty_mdl <- function(dep_lab, pair_lab) {
         cross_rho_mean_prior = array(0, H),
         cross_rho_sd_prior = array(10, H),
         scale_alpha_prior = 3,
-        scale_beta_prior = 50,
+        scale_beta_prior = 25,
         LJK_eta_prior = 2
     )
 

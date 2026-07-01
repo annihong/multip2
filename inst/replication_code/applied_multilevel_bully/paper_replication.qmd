@@ -1,0 +1,950 @@
+---
+title: "multilevel bully JRSSA replication"
+---
+
+## 
+
+```{r}
+setwd("/home/annihong/projects/multip2")
+source("/home/annihong/projects/multip2/inst/multilevel_extension/helper.R")
+devtools::load_all()
+library(ggplot2)
+library(dplyr)
+library(patchwork)  # for combining plots
+# library(rstan)
+# library(tidytext)
+library(tidyverse)
+reorder_within <- function(x, by, within, fun = mean, sep = "___", ...) {
+  new_x <- paste(x, within, sep = sep)
+  stats::reorder(new_x, by, FUN = fun)
+}
+scale_y_reordered <- function(..., sep = "___") {
+  ggplot2::scale_y_discrete(labels = function(x) gsub(paste0(sep, ".+$"), "", x), ...)
+}
+
+
+data_path = "/home/annihong/projects/multiplex-social-networks/stan/coding/gossip_perception/Data/Raw/GossipBully"
+
+get_degrees <- function(class, WAVE=4) {
+load(file.path(data_path, paste0(class,"_bully1_wave_",WAVE,"_cleaned.RData")))
+M <- list(bully=cleaned_data$bully1, victim=cleaned_data$bully1_rev)
+res <- lapply(M, function(x) {
+  outdeg <- rowMeans(x)
+  indeg <- colMeans(x)
+  return(data.frame(list(outdeg = outdeg, indeg = indeg)))
+})
+res <- cbind(res[[1]] %>% rename(outdeg_bully1 = outdeg, indeg_bully1 = indeg), 
+      res[[2]] %>% rename(outdeg_bully1_rev = outdeg, indeg_bully1_rev = indeg))
+res$class_id <- class
+res$idcode <- rownames(M[[1]])
+res$n <- nrow(M[[1]])
+
+return(res)
+}
+```
+
+```{r}
+
+filtered_df <- read.csv("/home/annihong/projects/multip2/data-raw/bully/filtered_df_no_missing_wave_4_bully1.csv")
+class_ids = filtered_df$class_id
+summary_df <- read.csv("/home/annihong/projects/multip2/data-raw/gossip/summary.csv")
+degree_summary <- lapply(class_ids, get_degrees) %>% bind_rows()
+```
+Create summary table 
+```{r}
+summary_df <- summary_df %>% rename(class_id = class) %>% filter(class_id %in% class_ids, wave == 4) 
+summary_df <- summary_df %>% left_join(filtered_df, by = c("class_id"))
+summary_df$idcode <- as.character(summary_df$idcode)
+summary_df <- inner_join(summary_df, degree_summary %>% select(idcode, outdeg_bully1, outdeg_bully1_rev, indeg_bully1, indeg_bully1_rev, n), by = "idcode")
+roma_percent <- sapply(class_ids, create_classlevel_covar, var_name = "roma", summary_df = summary_df)
+ses_percent <- sapply(class_ids, create_classlevel_covar, var_name = "ses", summary_df = summary_df)
+class_size <- sapply(class_ids, create_classlevel_covar, var_name = "num_present", summary_df = summary_df)
+filtered_df$roma_percent <- roma_percent
+filtered_df$ses_percent <- ses_percent
+filtered_df$class_size <- class_size
+
+
+```
+
+Creating the latex table for descriptive statistics.
+
+class level EDA
+```{r}
+
+df_long <- filtered_df %>%
+  pivot_longer(cols = c(bully1_density, bully1_rev_density), 
+               names_to = "variable", 
+               values_to = "value") %>%
+  mutate(variable = recode(variable,
+    "bully1_density" = "Bully network ",
+    "bully1_rev_density" = "Victim network "))
+
+
+p <- ggplot(df_long, aes(x = value, y = ses_percent, color = variable, fill = variable)) +
+  geom_point(alpha = 0.7, size = 2) +
+  geom_smooth(method = "lm", se = TRUE, alpha = 0.15) +
+  facet_wrap(~ variable, scales = "free_x") +
+  scale_color_manual(values = c("#4E79A7", "#F28E2B", "#59A14F")) +
+  scale_fill_manual(values = c("#4E79A7", "#F28E2B", "#59A14F")) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "none",
+    strip.text = element_text(face = "bold", size = 12),
+    panel.grid.minor = element_blank()
+  ) +
+  labs(y = "Density", x = "Proportion of low SES students")
+
+ggsave("/home/annihong/projects/multip2/inst/replication_code/applied_multilevel_bully/class_level_eda_SES.png", plot = p, width = 6, height = 4, dpi = 300)
+
+p <- ggplot(df_long, aes(x = value, y = class_size, color = variable, fill = variable)) +
+  geom_point(alpha = 0.7, size = 2) +
+  geom_smooth(method = "lm", se = TRUE, alpha = 0.15) +
+  facet_wrap(~ variable, scales = "free_x") +
+  scale_color_manual(values = c("#4E79A7", "#F28E2B", "#59A14F")) +
+  scale_fill_manual(values = c("#4E79A7", "#F28E2B", "#59A14F")) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "none",
+    strip.text = element_text(face = "bold", size = 12),
+    panel.grid.minor = element_blank()
+  ) +
+  labs(y = "Density", x = "Class size")
+
+ggsave("/home/annihong/projects/multip2/inst/replication_code/applied_multilevel_bully/class_level_eda_class_size.png", plot = p, width = 6, height = 4, dpi = 300)
+```
+
+```{r}
+
+df_long <- summary_df %>%
+  pivot_longer(cols = c(outdeg_bully1, outdeg_bully1_rev, indeg_bully1, indeg_bully1_rev),
+               names_to = "degree_type",
+               values_to = "degree") %>%
+  mutate(degree_type = recode(degree_type,
+    "outdeg_bully1" = "Out-degree (Bully)",
+    "outdeg_bully1_rev" = "Out-degree (Victim)",
+    "indeg_bully1" = "In-degree (Bully)",
+    "indeg_bully1_rev" = "In-degree (Victim)"
+  )) %>%
+  mutate(ses = ifelse(ses == 0, "High SES", "Low SES"), 
+         gender = ifelse(gender == 1, "Male", "Female"))
+
+p <- ggplot(df_long, aes(x = degree, fill = as.factor(ses))) +
+  # geom_histogram(alpha = 0.5, position = "dodge", bins = 20, 
+  #                color = "white", linewidth = 0.3) +
+  geom_density(alpha = 0.5, linewidth = 0.5)+
+  facet_wrap(~ degree_type, scales = "free") +
+  scale_fill_manual(
+   values = c("Low SES" = "#D4836D", "High SES" = "#7CAE9E"),
+    name = "SES Group"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "top",
+    strip.text = element_text(face = "bold", size = 12),
+    panel.grid.minor = element_blank()
+  ) +
+  labs(x = "Normalized Degree", y = "Density")
+
+ggsave("/home/annihong/projects/multip2/inst/replication_code/applied_multilevel_bully/degree_density_by_SES.png", plot = p, width = 10, height = 8, dpi = 300)
+
+p <- ggplot(df_long, aes(x = degree, fill = as.factor(ses))) +
+  geom_histogram(alpha = 0.8, position = "dodge", bins = 20, 
+                 color = "white", linewidth = 0.3) +
+  # geom_density(alpha = 0.5, linewidth = 0.5)+
+  facet_wrap(~ degree_type, scales = "free") +
+  scale_fill_manual(
+   values = c("Low SES" = "#D4836D", "High SES" = "#7CAE9E"),
+    name = "SES Group"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "top",
+    strip.text = element_text(face = "bold", size = 12),
+    panel.grid.minor = element_blank()
+  ) +
+  labs(x = "Normalized Degree", y = "Count")
+
+ggsave("/home/annihong/projects/multip2/inst/replication_code/applied_multilevel_bully/degree_histogram_by_SES.png", plot = p, width = 10, height = 8, dpi = 300)
+
+p <- ggplot(df_long, aes(x = degree, fill = as.factor(gender))) +
+  # geom_histogram(alpha = 0.5, position = "dodge", bins = 20, 
+  #                color = "white", linewidth = 0.3) +
+  geom_density(alpha = 0.5, linewidth = 0.5)+
+  facet_wrap(~ degree_type, scales = "free") +
+  scale_fill_manual(
+   values = c("Female" = "#D4836D", "Male" = "#7CAE9E"),
+    name = "Gender"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "top",
+    strip.text = element_text(face = "bold", size = 12),
+    panel.grid.minor = element_blank()
+  ) +
+  labs(x = "Normalized Degree", y = "Density")
+
+ggsave("/home/annihong/projects/multip2/inst/replication_code/applied_multilevel_bully/degree_density_by_Gender.png", plot = p, width = 10, height = 8, dpi = 300)
+
+p <- ggplot(df_long, aes(x = degree, fill = as.factor(gender))) +
+  geom_histogram(alpha = 0.8, position = "dodge", bins = 20, 
+                 color = "white", linewidth = 0.3) +
+  # geom_density(alpha = 0.5, linewidth = 0.5)+
+  facet_wrap(~ degree_type, scales = "free") +
+  scale_fill_manual(
+   values = c("Female" = "#D4836D", "Male" = "#7CAE9E"),
+    name = "Gender"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "top",
+    strip.text = element_text(face = "bold", size = 12),
+    panel.grid.minor = element_blank()
+  ) +
+  labs(x = "Normalized Degree", y = "Count")
+
+ggsave("/home/annihong/projects/multip2/inst/replication_code/applied_multilevel_bully/degree_histogram_by_Gender.png", plot = p, width = 10, height = 8, dpi = 300)
+
+
+```
+
+
+
+
+```{r}
+class = 35200
+WAVE = 4
+data_path = "/home/annihong/projects/multiplex-social-networks/stan/coding/gossip_perception/Data/Raw/GossipBully"
+load(file.path(data_path, paste0(class,"_bully1_wave_",WAVE,"_cleaned.RData")))
+M <- list(bully=cleaned_data$bully1, victim=cleaned_data$bully1_rev)
+network_names <- names(M)
+M_net <- lapply(M, igraph::graph_from_adjacency_matrix)
+M_transpose <- list(bully=cleaned_data$bully1, victim_transpose=t(cleaned_data$bully1_rev))
+M_net_transpose <- lapply(M_transpose, igraph::graph_from_adjacency_matrix)
+
+# # NETWORK INFO: 
+# n = nrow(cleaned_data$bully1)
+# t = 2
+# H = t*(t - 1)/2
+# N = n*(n - 1)/2 # number of dyads
+# K = 2^(2*t)
+class_wave_title <- paste(class, WAVE, sep = "_")
+
+```
+```{r}
+extract_last_n_char <- function(x, n){
+  substr(x, nchar(x) - n + 1, nchar(x))
+}
+#####visualize the networks #####
+titles <- c("Sender-Target (sender)","Target-Sender (perception)")
+colors <- c("#7EC8C8", "#F4D68C")
+types <- as.factor(cleaned_data$is_female)
+levels(types) <- c("Male", "Female")
+#l <- layout_nicely(M_net[[1]]) 
+l <- layout_in_circle(M_net[[1]])
+
+for (i in 1:length(M_net)){
+ png(filename=paste0("/home/annihong/projects/multip2/inst/replication_code/applied_multilevel_bully/", class_wave_title,network_names[[i]],"_network_visualization.png"), height = 3,
+  width= 3,
+  units= "in",
+  res = 300)
+par(mar = c(0, 0, 0, 0))
+  net <- simplify(M_net[[i]])
+  V(net)$types <- types
+  V(net)$label.cex <- 1
+plot(net, edge.arrow.size=.3,edge.color="#6b6b6b",
+vertex.label=unlist(lapply(names(V(net)),extract_last_n_char, n=2)),
+vertex.size=17,vertex.frame.color="black",
+vertex.color=colors[V(net)$types],
+layout = l,
+margin = c(0, 0, 0, 0))
+dev.off()
+}
+png(filename=paste0("/home/annihong/projects/multip2/inst/replication_code/applied_multilevel_bully/", class_wave_title,"retaliation_intersection.png"), height = 3,
+  width= 3,
+  units= "in",
+  res = 300)
+  par(mar = c(0, 0, 0, 0))
+net = intersection(net1 = simplify(M_net[[1]]),net2 = simplify(M_net[[i]]))
+V(net)$types <- types
+V(net)$label.cex <- 1
+  plot(net, edge.arrow.size=.3,edge.color="#6b6b6b", vertex.label=unlist(lapply(names(V(net)), extract_last_n_char, n=2)), vertex.size=17,vertex.frame.color="black",
+vertex.color=colors[V(net)$types], layout = l,
+  margin = c(0, 0, 0, 0))
+dev.off()
+png(filename=paste0("/home/annihong/projects/multip2/inst/replication_code/applied_multilevel_bully/", class_wave_title,"perception_intersection.png"), height = 3,
+  width= 3,
+  units= "in",
+  res = 300)
+  par(mar = c(0, 0, 0, 0))
+net = intersection(net1 = simplify(M_net_transpose[[1]]),net2 = simplify(M_net_transpose[[2]]))
+V(net)$types <- types
+V(net)$label.cex <- 1
+  plot(net, edge.arrow.size=.3,edge.color="#6b6b6b", vertex.label=unlist(lapply(names(V(net)), extract_last_n_char, n=2)), vertex.size=17,vertex.frame.color="black",
+vertex.color=colors[V(net)$types], layout = l,
+  margin = c(0, 0, 0, 0))
+dev.off()
+
+#####visualize the networks end #####
+```
+
+Expected Jaccard index under random edge permutation, given $m_s$ edges in the first network, $m_t$ edges in the second, and $N$ total possible edges.
+```{r}
+# Expected Jaccard index of two networks under random edge permutation.
+# ds: density of the first network
+# dt: density of the second network
+# n: number of nodes in the network
+expected_jaccard <- function(ds, dt, n) {
+  N <- n * (n - 1)  # total number of possible edges for a directed network
+  ms <- ds * N  # number of edges in the first network
+  mt <- dt * N  # number of edges in the second network
+  
+  k_min <- max(0, ms + mt - N)
+  k_max <- min(ms, mt)
+  expected_jaccard <- 0
+  for (k in k_min:k_max) {
+    val <- k / (ms + mt - k)
+    # numer <- choose(ms, k) * choose(N - ms, mt - k)
+    # demo <-  choose(N, mt)
+    # prob <- numer / demo
+    prob <- dhyper(k, ms, N - ms, mt)
+    expected_jaccard <- expected_jaccard + val * prob
+  }
+  return(expected_jaccard) 
+}
+```
+
+```{r}
+expected_jaccard_res <- filtered_df |> rowwise() |> 
+  mutate(expected_jaccard = expected_jaccard(bully1_density, bully1_rev_density, class_size)) |> 
+  select(expected_jaccard, sender_psyche_jaccard, target_percep_jaccard, class_size) 
+
+res_jaccard <- c(mean(expected_jaccard_res$expected_jaccard), median(expected_jaccard_res$expected_jaccard), sd(expected_jaccard_res$expected_jaccard))
+round(res_jaccard, 3)
+```
+
+```{r}
+res <- filtered_df |>
+   rowwise() |> 
+  mutate(expected_jaccard = expected_jaccard(bully1_density, bully1_rev_density, class_size)) |> 
+  select(class_size, bully1_density, bully1_reciprocity, bully1_rev_density, bully1_rev_reciprocity, sender_psyche_jaccard, target_percep_jaccard, prop_female, ses_percent, expected_jaccard)
+
+descriptive_stats <- function(x) {
+  c(mean = mean(x, na.rm = TRUE), median = median(x, na.rm = TRUE), sd = sd(x, na.rm = TRUE))
+}
+table_res <- t(apply(res, 2, descriptive_stats))
+library(knitr)
+library(kableExtra)
+
+kable(table_res, format = "latex", digits = 2, booktabs = TRUE,
+      col.names = c("Mean", "Median", "SD")) %>%
+  kable_styling(font_size = 9, latex_options = "hold_position")
+```
+```{r}
+# fit <- readRDS(file = "/home/annihong/projects/multiplex-social-networks/multilevelp2/code/bully1_2000_empty.Rds")
+# rstan::get_elapsed_time(fit)/3600 
+# fit <- readRDS(file = "/home/annihong/projects/multiplex-social-networks/multilevelp2/code/bully1_2000group_only.Rds")
+# rstan::get_elapsed_time(fit)/3600 
+# fit <- readRDS(file = "/home/annihong/projects/multiplex-social-networks/multilevelp2/code/bully1_2000_full.Rds")
+# rstan::get_elapsed_time(fit)/3600 
+```
+```{r}
+fit <- readRDS(file = "/home/annihong/projects/multiplex-social-networks/multilevelp2/code/bully1_2000_full.Rds")
+stan_data <- readRDS(file = "/home/annihong/projects/multiplex-social-networks/multilevelp2/code/stan_data_bully1_2000_full.Rds")
+s <- summary(fit)$summary
+```
+
+```{r}
+# Recompile the fixed Stan model and rerun only the generated quantities block after fixing the bug in the generated quantities block.
+compiled_model <- rstan::stan_model(
+  file = here::here("inst/stan/multilevel_multiplex_p2_uncentered.stan")
+)
+draws <- as.matrix(fit)
+gqs_fit <- rstan::gqs(compiled_model, draws = draws, data = stan_data)
+
+```
+
+```{r}
+
+# s[-grep(glue::glue("^y_tilde"), rownames(s)),c(1,4,8,9,10), drop=FALSE]
+params <- c("mu_PS","mu_fixed_coef", "rho_PS", "alpha_fixed_coef", "beta_fixed_coef", "cross_mu_PS", "cross_rho_PS", "cross_rho_fixed_coef", "mu_group_coef")
+df <- data.frame()
+for(param in params){
+  print(param)
+  result <- s[grep(glue::glue("^{param}"), rownames(s)),c(1,4,8,9,10), drop=FALSE] %>% data.frame()
+
+  df <- df %>% bind_rows(result)
+}
+df
+
+labels <- c(
+  "Density (bully)",
+  "Density (victim)",
+  "Reciprocity (bully)",
+  "Reciprocity (victim)",
+  "Female sender (bully)",
+  "Low SES sender (bully)",
+  "Female sender (victim)",
+  "Low SES sender (victim)",
+  "Female receiver (bully)",
+  "Low SES receiver (bully)",
+  "Female receiver (victim)",
+  "Low SES receiver (victim)",
+  "Cross-density (bully-victim)",
+  "Cross-reciprocity (bully-victim)",
+  "Class size (bully)",
+  "SES percent (bully)",
+  "Class size (victim)",
+  "SES percent (victim)"
+)
+
+par_labels <- data.frame(Parameter = rownames(df), Label = labels)
+
+```
+```{r}
+library(ggmcmc)
+params <- c("mu_PS","mu_fixed_coef", "rho_PS", "alpha_fixed_coef", "beta_fixed_coef", "cross_mu_PS", "cross_rho_PS", "cross_rho_fixed_coef", "mu_group_coef")
+params_regex <- paste0("^(", paste(params, collapse = "|"), ")")
+file = "/home/annihong/projects/multip2/inst/replication_code/applied_multilevel_bully/convergence_diagnostics.pdf"
+
+S <- ggmcmc::ggs(fit, family = params_regex, keep_original_order=TRUE, sort=FALSE, par_labels = par_labels)
+ggmcmc::ggmcmc(S, file = file, param_page=6, plot=c("traceplot", "running", "geweke", "density"))
+
+
+
+S <- ggs(fit, family = params_regex, keep_original_order = TRUE, sort = FALSE, par_labels = par_labels)
+
+plot_types <- c("traceplot", "running", "geweke", "density")
+param_names <- unique(S$Parameter)
+n_per_page <- 6
+pages <- split(param_names, ceiling(seq_along(param_names) / n_per_page))
+
+dir <- "/home/annihong/projects/multip2/inst/replication_code/applied_multilevel_bully/diagnostics/"
+
+for (plot_type in plot_types) {
+  for (i in seq_along(pages)) {
+    S_sub <- S[S$Parameter %in% pages[[i]], ]
+
+    if (plot_type == "gewekw") {
+       S_sub <- S
+    }
+    
+    p <- switch(plot_type,
+      "traceplot" = ggs_traceplot(S_sub),
+      "running"   = ggs_running(S_sub),
+      "geweke"    = ggs_geweke(S_sub),
+      "density"   = ggs_density(S_sub)
+    )
+    
+    ggsave(
+      filename = paste0(dir, "diagnostics_", plot_type, "_page", i, ".png"),
+      plot = p, width = 8, height = 10, dpi = 300
+    )
+  }
+}
+
+```
+```{r}
+
+#actor correlation matrix
+print("estimates")
+result <- s[grep(glue::glue("Corr\\["), rownames(s)),c(1), drop=FALSE][,1] %>% matrix(nrow=4) %>% as.data.frame()
+colnames(result) <- c("sender:bully", "receiver:bully", "sender:victim", "receiver:victim")
+rownames(result) <- c("sender:bully", "receiver:bully", "sender:victim", "receiver:victim")
+result
+
+print("lower")
+lower <- s[grep(glue::glue("Corr\\["), rownames(s)),c(4), drop=FALSE][,1] %>% matrix(nrow=4) %>% as.data.frame()
+print(lower)
+
+print("upper")
+upper <- s[grep(glue::glue("Corr\\["), rownames(s)),c(8), drop=FALSE][,1] %>% matrix(nrow=4) %>% as.data.frame()
+print(upper)
+
+colnames(result) <- c("sender:bully", "receiver:bully", "sender:victim", "receiver:victim")
+rownames(result) <- c("sender:bully", "receiver:bully", "sender:victim", "receiver:victim")
+result
+
+```
+
+
+```{r}
+s <- summary(gqs_fit)$summary
+# group level random effect within
+layer_names <- c("bully", "victim")
+for (t in 1:stan_data$T){
+  print("estimates")
+  result <- s[grep(glue::glue("Sigma_within\\[{t},"), rownames(s)),c(1), drop=FALSE][,1] %>% matrix(nrow=2 + sum(stan_data$D_within[1,])) %>% as.data.frame()
+  colnames(result) <- paste0(layer_names[t], ":",c("density", "reciprocity", "is_female_sender", "ses_sender", "is_female_receiver", "ses_receiver"))
+  rownames(result) <- paste0(layer_names[t], ":",c("density", "reciprocity", "is_female_sender", "ses_sender", "is_female_receiver", "ses_receiver"))
+
+  # kable(result, format = "latex", digits = 2, booktabs = TRUE) %>%
+  #   kable_styling(font_size = 9, latex_options = "hold_position")
+  print(round(result,3))
+  
+  print("lower")
+result <- s[grep(glue::glue("Sigma_within\\[{t},"), rownames(s)),c(4), drop=FALSE][,1] %>% matrix(nrow=2 + sum(stan_data$D_within[1,])) %>% as.data.frame()
+    colnames(result) <- paste0(layer_names[t], ":",c("density", "reciprocity", "is_female_sender", "ses_sender", "is_female_receiver", "ses_receiver"))
+  rownames(result) <- paste0(layer_names[t], ":",c("density", "reciprocity", "is_female_sender", "ses_sender", "is_female_receiver", "ses_receiver"))
+   print(round(result,3))
+
+print("upper")
+result <- s[grep(glue::glue("Sigma_within\\[{t},"), rownames(s)),c(8), drop=FALSE][,1] %>% matrix(nrow=2 + sum(stan_data$D_within[1,])) %>% as.data.frame()
+
+
+colnames(result) <- paste0(layer_names[t], ":",c("density", "reciprocity", "is_female_sender", "ses_sender", "is_female_receiver", "ses_receiver"))
+rownames(result) <- paste0(layer_names[t], ":",c("density", "reciprocity", "is_female_sender", "ses_sender", "is_female_receiver", "ses_receiver"))
+ print(round(result,3))
+}
+
+```
+
+```{r}
+
+# group level random effect within
+layer_names <- c("bully-victim")
+for (t in 1:stan_data$H){
+  print("estimates")
+  result <- s[grep(glue::glue("Sigma_cross\\[{t},"), rownames(s)),c(1), drop=FALSE][,1] %>% matrix(nrow=2) %>% as.data.frame()
+  colnames(result) <- paste0(layer_names[t], ":",c("cross_density", "cross_reciprocity"))
+  rownames(result) <- paste0(layer_names[t], ":",c("cross_density", "cross_reciprocity"))
+
+  print(result)
+  
+  print("lower")
+result <- s[grep(glue::glue("Sigma_cross\\[{t},"), rownames(s)),c(4), drop=FALSE][,1] %>% matrix(nrow=2) %>% as.data.frame()
+    colnames(result) <- paste0(layer_names[t], ":",c("cross_density", "cross_reciprocity"))
+  rownames(result) <- paste0(layer_names[t], ":",c("cross_density", "cross_reciprocity"))
+  print(result)
+
+print("upper")
+result <- s[grep(glue::glue("Sigma_cross\\[{t},"), rownames(s)),c(8), drop=FALSE][,1] %>% matrix(nrow=2) %>% as.data.frame()
+colnames(result) <- paste0(layer_names[t], ":",c("cross_density", "cross_reciprocity"))
+rownames(result) <- paste0(layer_names[t], ":",c("cross_density", "cross_reciprocity"))
+print(result)
+}
+```
+
+```{r}
+PLOT_PATH <- "/home/annihong/projects/multip2/inst/replication_code/applied_multilevel_bully/random_eff_plots/"
+file_name <- "bully_2000_full"
+s <- summary(fit)$summary
+## Intercepts
+# param = "mu"
+class_size_id <- paste(class_ids, class_size, sep = " : ")
+# Pretty theme for consistency
+custom_theme <- theme_minimal(base_size = 14) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text.y = element_text(size = 10),
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.margin = margin(10, 15, 10, 10),
+    legend.position = "none",
+  )
+
+```
+```{r}
+
+for (param in c("mu", "rho")) {
+  df1 <- s[grep(glue::glue("^{param}_random_PS.*1]$"), rownames(s)),c(1,4,8,9,10)] %>% data.frame()
+  df1$class <- class_size_id
+  df1$layer <- "Bully1"
+  df2 <- s[grep(glue::glue("^{param}_random_PS.*2]$"), rownames(s)),c(1,4,8,9,10)] %>% data.frame()
+  df2$class <- class_size_id
+  df2$layer <- "Bully1_rev"
+  df <- rbind(df1, df2)
+  df$type = "random_intercept"
+
+  overall_df <- s[grep(glue::glue("^{param}_PS"), rownames(s)),c(1,4,8,9,10)] %>% data.frame() %>% mutate(
+    class = "Overall",
+    layer = c("Bully1", "Bully1_rev"),
+    type = "overall_intercept"
+  )
+
+  df <-  rbind(df, overall_df)
+  colnames(df) <- c("mean", "lower", "upper", "n_eff", "Rhat", "class", "layer", "type")
+
+
+
+  # Intercepts
+  int_plt <- df %>%
+    mutate(class  = as.factor(class)) %>%
+    ggplot(aes(x = mean, y = reorder_within(class, mean, layer), fill = type, color = type)) +
+    geom_errorbarh(aes(xmin = lower,
+                      xmax = upper, 
+                  color = type),
+                  height = 0.2) +
+    geom_point(size = 3,
+              shape = 21,
+              color = "black") +
+    geom_vline(xintercept = 0,
+              color = "red",
+              size = 0.8,
+              linetype = "dashed") +
+  #   scale_x_continuous(breaks = seq(-60, 60, 20), limits = c(-20, 10)) +
+    labs(x = "Intercept Estimate",
+        y = "Classroom",
+        title = param) +
+    custom_theme +
+    facet_wrap(~ layer, ncol = 1, scales = "free_y") +  # Allow free y-axis scales
+    scale_y_reordered()
+  int_plt
+
+  ggsave(glue::glue("{PLOT_PATH}{param}_intercept_plot_{file_name}.png"), plot = int_plt, width = 8, height = 10, dpi = 300)
+}
+
+```
+
+```{r}
+####### slope ########
+for (param in c("alpha", "beta")){ 
+   s[grep(glue::glue("^{param}"), rownames(s)),c(1,4,8,9,10)]
+
+  df1 <- s[grep(glue::glue("^{param}_coef\\[1,"), rownames(s)),c(1,4,8,9,10)] %>% data.frame()
+  df1$class <- class_size_id
+  df1$layer <- "bully1"
+  df2 <- s[grep(glue::glue("^{param}_coef\\[3,"), rownames(s)),c(1,4,8,9,10)] %>% data.frame()
+  df2$class <- class_size_id
+  df2$layer <- "bully1_rev"
+  df <- rbind(df1, df2)
+  df$type = "random_slope"
+
+  overall_df <- s[grep(glue::glue("^{param}_fixed_coef\\[1|^{param}_fixed_coef\\[3"), rownames(s)),c(1,4,8,9,10)] %>% data.frame() %>% mutate(
+    class = "Overall",
+    layer = c("bully1", "bully1_rev"),
+    type = "overall_intercept"
+  )
+
+  df <-  rbind(df, overall_df)
+  colnames(df) <- c("mean", "lower", "upper", "n_eff", "Rhat", "class", "layer", "type")
+
+
+
+  # Intercepts
+  slp_plt <- df %>%
+    mutate(class  = as.factor(class)) %>%
+    ggplot(aes(x = mean, y = reorder_within(class, mean, layer), fill = type, color = type)) +
+    geom_errorbarh(aes(xmin = lower,
+                      xmax = upper, 
+                  color = type),
+                  height = 0.2) +
+    geom_point(size = 3,
+              shape = 21,
+              color = "black") +
+    geom_vline(xintercept = 0,
+              color = "red",
+              size = 0.8,
+              linetype = "dashed") +
+  #   scale_x_continuous(breaks = seq(-60, 60, 20), limits = c(-20, 10)) +
+    labs(x = "Slope Estimate",
+        y = "Classroom",
+        title = glue::glue("Is_female: {param}")) +
+    custom_theme +
+    facet_wrap(~ layer, ncol = 1, scales = "free_y") +  # Allow free y-axis scales
+    scale_y_reordered()
+  slp_plt
+
+  ggsave(glue::glue("{PLOT_PATH}{param}_slope_plot_female{file_name}.png"), plot = slp_plt, width = 8, height = 10, dpi = 300)
+}
+```
+```{r}
+s <- summary(fit)$summary
+####### slope ########
+for (param in c("alpha", "beta")){ 
+   s[grep(glue::glue("^{param}"), rownames(s)),c(1,4,8,9,10)]
+
+  df1 <- s[grep(glue::glue("^{param}_coef\\[2,"), rownames(s)),c(1,4,8,9,10)] %>% data.frame()
+  df1$class <- class_size_id
+  df1$layer <- "bully1"
+  df2 <- s[grep(glue::glue("^{param}_coef\\[4,"), rownames(s)),c(1,4,8,9,10)] %>% data.frame()
+  
+  
+  df2$class <- class_size_id
+  df2$layer <- "bully1_rev"
+  df <- rbind(df1, df2)
+  df$type = "random_slope"
+
+  overall_df <- s[grep(glue::glue("^{param}_fixed_coef\\[2|^{param}_fixed_coef\\[4"), rownames(s)),c(1,4,8,9,10)] %>% data.frame() %>% mutate(
+    class = "Overall",
+    layer = c("bully1", "bully1_rev"),
+    type = "overall_intercept"
+  )
+
+  df <-  rbind(df, overall_df)
+  colnames(df) <- c("mean", "lower", "upper", "n_eff", "Rhat", "class", "layer", "type")
+
+
+
+  # Intercepts
+  slp_plt <- df %>%
+    mutate(class  = as.factor(class)) %>%
+    ggplot(aes(x = mean, y = reorder_within(class, mean, layer), fill = type, color = type)) +
+    geom_errorbarh(aes(xmin = lower,
+                      xmax = upper, 
+                  color = type),
+                  height = 0.2) +
+    geom_point(size = 3,
+              shape = 21,
+              color = "black") +
+    geom_vline(xintercept = 0,
+              color = "red",
+              size = 0.8,
+              linetype = "dashed") +
+  #   scale_x_continuous(breaks = seq(-60, 60, 20), limits = c(-20, 10)) +
+    labs(x = "Slope Estimate",
+        y = "Classroom",
+        title = glue::glue("Low_ses: {param}")) +
+    custom_theme +
+    facet_wrap(~ layer, ncol = 1, scales = "free_y") +  # Allow free y-axis scales
+    scale_y_reordered()
+  slp_plt
+
+  ggsave(glue::glue("{PLOT_PATH}{param}_slope_plot_ses{file_name}.png"), plot = slp_plt, width = 8, height = 10, dpi = 300)
+}
+
+
+
+```
+
+```{r}
+## cross_layer effects
+
+for (param in c("cross_mu", "cross_rho")) {  
+  df1 <- s[grep(glue::glue("^{param}_random_PS.*1]$"), rownames(s)),c(1,4,8,9,10)] %>% data.frame()
+  df1$class <- class_size_id
+  df1$layer <- "bully1 x bully1_rev"
+
+  df <- df1
+  df$type = "random_intercept"
+  colnames(df) <- c("mean", "lower", "upper", "n_eff", "Rhat", "class", "layer", "type")
+  overall_df <- s[grep(glue::glue("^{param}_PS"), rownames(s)),c(1,4,8,9,10)]
+
+  # s[grep(glue::glue("^{param}\\[1\\]"), rownames(s)),c(1,4,8,9,10)]
+
+  # s[grep(glue::glue("^{param}_random\\["), rownames(s)),c(1,4,8,9,10)] %>% data.frame()
+
+  overall_df <- as.data.frame(t(overall_df)) %>% mutate(
+    class = "Overall",
+    layer =  "bully1 x bully1_rev",
+    type = "overall_intercept"
+  )
+  colnames(overall_df) <- c("mean", "lower", "upper", "n_eff", "Rhat", "class", "layer", "type")
+  df <-  rbind(df, overall_df)
+
+  # Intercepts
+  int_plt_cross <- df %>%
+    mutate(class  = as.factor(class)) %>%
+    ggplot(aes(x = mean, y = reorder_within(class, mean, layer), fill = type, color = type)) +
+    geom_errorbarh(aes(xmin = lower,
+                      xmax = upper, 
+                  color = type),
+                  height = 0.2) +
+    geom_point(size = 3,
+              shape = 21,
+              color = "black") +
+    geom_vline(xintercept = 0,
+              color = "red",
+              size = 0.8,
+              linetype = "dashed") +
+  #   scale_x_continuous(breaks = seq(-60, 60, 20), limits = c(-20, 10)) +
+    labs(x = "Intercept Estimate",
+        y = "Classroom",
+        title = param) +
+    custom_theme +
+    facet_wrap(~ layer, ncol = 1, scales = "free_y") +  # Allow free y-axis scales
+    scale_y_reordered()
+  int_plt_cross
+
+  ggsave(glue::glue("{PLOT_PATH}{param}_intercept_plot_{file_name}.png"), plot = int_plt_cross, width = 8, height = 8, dpi = 300)
+}
+
+```
+
+
+generate simulated data from the fitted model to check the model fit and perform posterior predictive checks.
+```{r}
+# fit <- readRDS(file = "/home/annihong/projects/multiplex-social-networks/multilevelp2/code/bully1_2000_full.Rds")
+# stan_data <- readRDS(file = "/home/annihong/projects/multiplex-social-networks/multilevelp2/code/stan_data_bully1_2000_full.Rds")
+# s <- summary(fit)$summary
+# compiled_model <- rstan::stan_model(
+#   file = here::here("inst/stan/multilevel_multiplex_p2_uncentered.stan")
+# )
+# draws <- as.matrix(fit)
+# stan_data_new <- stan_data
+# stan_data_new$network_sim <- 1
+# gqs_fit <- rstan::gqs(compiled_model, draws = draws, data = stan_data_new)
+# y_tilde <- rstan::extract(gqs_fit, "y_tilde")$y_tilde  
+# saveRDS(y_tilde, file = "/home/annihong/projects/multiplex-social-networks/multilevelp2/code/simulated_y_tilde_bully1_2000_full.Rds")
+```
+```{r}
+y_tilde <- readRDS(file = "/home/annihong/projects/multiplex-social-networks/multilevelp2/code/simulated_y_tilde_bully1_2000_full.Rds")
+#y_tilde <- y_tilde[sample(nrow(y_tilde), 1000),]  # Use random sample of 1000 posterior samples for analysis
+```
+
+```{r}
+source("./inst/multilevel_extension/helper.R")
+data_path = "/home/annihong/projects/multiplex-social-networks/stan/coding/gossip_perception/Data/Raw/GossipBully"
+
+
+######gossip data##########
+
+filtered_df <- read.csv("data-raw/bully/filtered_df_no_missing_wave_4_bully1.csv")
+class_ids = filtered_df$class_id
+summary_df <- read.csv("/home/annihong/projects/multip2/data-raw/gossip/summary.csv")
+summary_df <- summary_df %>% rename(class_id = class) %>% filter(class_id %in% class_ids, wave == 4) 
+summary_df <- summary_df %>% left_join(filtered_df, by = c("class_id")) %>% mutate(is_female = ifelse(gender == 2, 1, 0))
+
+# #######extension to L networks ######
+
+
+L = length(class_ids)
+t = 2
+H = 1
+layer_covar = FALSE
+group_covar = TRUE
+
+
+
+#########group covar###########
+
+roma_percent <- sapply(class_ids, create_classlevel_covar, var_name = "roma", summary_df = summary_df)
+ses_percent <- sapply(class_ids, create_classlevel_covar, var_name = "ses", summary_df = summary_df)
+class_size <- sapply(class_ids, create_classlevel_covar, var_name = "num_present", summary_df = summary_df)
+
+group_covariates <- matrix(c(class_size, ses_percent), nrow = L, ncol = 2)
+D_group_within <- matrix(c(2,0,2,0), nrow = 2, ncol = t)
+D_group_cross <- matrix(c(0,0), nrow = 2, ncol = H)
+
+mu_group_covariates_idx <- c(1,2,1,2)
+rho_group_covariates_idx <- numeric(0)
+cross_mu_group_covariates_idx <- numeric(0)
+cross_rho_group_covariates_idx <- numeric(0)
+
+
+stan_data_list <- lapply(class_ids, create_stan_data_per_class, layer_covar = layer_covar, data_path = data_path, layer_1 = "bully1", layer_2 = "bully1_rev", covar_df = summary_df)
+
+stan_data <- generate_multilevel_stan_data(stan_data_list = stan_data_list)
+```
+
+```{r}
+set.seed(123)
+N_vec <- stan_data$N   # vector of length L 
+n_vec <- stan_data$n   # vector of length L 
+L <- stan_data$L   
+T_net <- stan_data$T
+# Split y_tilde by group and convert to networks
+sim_nets_by_group <- list()
+dep_nets_by_group <- list()
+
+
+
+get_gof <- function(l) {
+  # Column indices for group l's dyads
+  start <- sum(N_vec[seq_len(l - 1)]) + 1
+  end <- sum(N_vec[seq_len(l)])
+
+  # Slice: B x N[l] matrix
+  y_tilde_l <- y_tilde[, start:end, drop = FALSE]
+
+  y_l <- stan_data$y[start:end]
+  
+  dim(y_l) <- c(1, length(y_l))
+
+  # y_l_2 <- stan_data_list[[l]]$y
+  # dim(y_l_2) <- c(1, length(y_l_2))
+  
+  # Reuse existing single-level conversion with group-specific n[l]
+
+  sim_nets <- dyads_to_matrix_list(
+    dyad_df = y_tilde_l,
+    n = n_vec[l],
+    t = T_net,
+    dep_lab = c("bully", "victim")  # your layer names 
+  )    
+
+
+  dep_net <- dyads_to_matrix_list(
+    dyad_df = y_l,
+    n = n_vec[l],
+    t = T_net,
+    dep_lab = c("bully", "victim")  # your layer names                                                                
+  )     
+
+  dep_net <- lapply(dep_net, function(x) x[[1]])  
+
+
+  # dep_nets_2 <- dyads_to_matrix_list(
+  #   dyad_df = y_l_2,
+  #   n = n_vec[l],
+  #   t = T_net,
+  #   dep_lab = c("bully", "victim")  # your layer names                                                                
+  # ) 
+
+  # dep_nets_2 <- lapply(dep_nets_2, function(x) x[[1]])  
+  p_multi_base <- multiplex_gof_baseline(dep_net, sim_nets)
+  p_triad <- simulated_network_checks(sim_nets, dep_net, "Triad_census", layer_lab = c("bully", "victim"),main=glue::glue("Class {class_ids[l]}"), center = TRUE, scale = TRUE)
+  p_od <- simulated_network_checks(sim_nets, dep_net, "Outdegree_distribution", layer_lab = c("bully", "victim"), main=glue::glue("Class {class_ids[l]}"))
+  p_id <- simulated_network_checks(sim_nets, dep_net, "Indegree_distribution", layer_lab = c("bully", "victim"), main = glue::glue("Class {class_ids[l]}"))
+
+  return(list(p_triad = p_triad, p_od = p_od, p_id = p_id, p_multi_base = p_multi_base))
+}
+sampled_l <- sample(1:L, 6)
+sampled_l <- sample(1:L, 6)
+gof_plots <- lapply(sampled_l, get_gof)
+multi_base_plots <- lapply(1:6, function(i) gof_plots[[i]]$p_multi_base + ggplot2::ggtitle(glue::glue("Class {class_ids[sampled_l[i]]}    ")) + theme(plot.title = element_text(hjust = 0.5)))
+triad_plots <- lapply(1:6, function(i) gof_plots[[i]]$p_triad )
+od_plots <- lapply(1:6, function(i) gof_plots[[i]]$p_od)
+id_plots <- lapply(1:6, function(i) gof_plots[[i]]$p_id)
+
+p <- gridExtra::grid.arrange(
+  grobs = multi_base_plots,
+  ncol = 3,
+  nrow = 2,
+)
+
+ggsave("/home/annihong/projects/multip2/inst/replication_code/applied_multilevel_bully/gof_plots/gof_multi_base.png", plot = p, width = 18, height = 12, dpi = 300)
+
+png("/home/annihong/projects/multip2/inst/replication_code/applied_multilevel_bully/gof_plots/gof_triad_plots.png", width = 2400, height = 2000, res = 200)
+gridExtra::grid.arrange(
+  grobs = triad_plots,
+  ncol = 2,
+  nrow = 3
+)
+dev.off()
+
+png("/home/annihong/projects/multip2/inst/replication_code/applied_multilevel_bully/gof_plots/gof_od_plots.png", width = 2400, height = 2000, res = 200)
+gridExtra::grid.arrange(
+  grobs = od_plots,
+  ncol = 2,
+  nrow = 3
+)
+dev.off()
+
+png("/home/annihong/projects/multip2/inst/replication_code/applied_multilevel_bully/gof_plots/gof_id_plots.png", width = 2400, height = 2000, res = 200)
+gridExtra::grid.arrange(
+  grobs = id_plots,
+  ncol = 2,
+  nrow = 3
+)
+dev.off()
+```
+
+```{r}
+dep_net <- res_y_2
+sim_nets <- res
+
+```
+
+
+
+```{r}
+stan_data_list[[l]]
+stan_data$y_obs
+class = class_ids[l]
+WAVE = 4
+data_path = "/home/annihong/projects/multiplex-social-networks/stan/coding/gossip_perception/Data/Raw/GossipBully"
+load(file.path(data_path, paste0(class,"_bully1_wave_",WAVE,"_cleaned.RData")))
+M <- list(bully=cleaned_data$bully1, victim=cleaned_data$bully1_rev)
+network_names <- names(M)
+M                   
+```

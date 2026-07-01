@@ -1,0 +1,27 @@
+CoreGossip RData contains:
+
+gossip1 #About whom do you talk with your classmates behind his/her back?
+gossip1_rev #What do you think, who is talking about you with other classmates behind your back?
+gossip1partner #Who is talking about other classmates to you?  (only in waves 5-6)
+gossip1target #About whom other classmates are talking to you? (only in waves 5-6)
+
+
+GossipBully RData contains:
+
+bully: bully1+bully2+bully3+gossip1
+bully1 #WHOM do you mock, insult? 
+bully1_rev #Who is mocking, insulting you?
+bully2 #WHOM do you push, hit, or beat up?
+bully2_rev #Who is pushing, hitting, or beating you up?
+bully3 #WHOM do you poke in sms, e-mail, or on social media?
+bully3_rev #Who is poking you in sms, e-mail, or on social media?
+gossip1 #About whom do you talk with your classmates behind his/her back?
+gossip1_rev #What do you think, who is talking about you with other classmates behind your back?
+gossip1partner #Who is talking about other classmates to you? (only in waves 5-6)
+gossip1target #About whom other classmates are talking to you? (only in waves 5-6)
+friendship
+gender
+hh_hhh (measurement of low SES / highly disadvantaged status)
+roma
+wellbeing
+classmember

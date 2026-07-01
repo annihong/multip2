@@ -264,23 +264,22 @@ fit.Mp2Model <- function(model_obj, chains = 4, iter = 200, warmup = floor(iter/
     options(mc.cores =mc.cores)
     rstan::rstan_options(auto_write = auto_write)
     
-    if (fit) {
-        fpath <- system.file("stan", stan_file, package="multip2")
-        p2_fit <- rstan::stan(
-                        file=fpath, 
-                        data = stan_data,
-                        chains = chains,
-                        iter = iter,
-                        warmup = warmup,
-                        thin = thin,
-                        seed = seed, 
-                        ...
-                        )
-        model_obj$fit_res$stan_fit <- p2_fit
-        s <- create_summary(model_obj)
-        model_obj$fit_res$summary <- s$summary
-        model_obj$fit_res$par_labels <- s$par_labels
-    }
+    fpath <- system.file("stan", stan_file, package="multip2")
+    p2_fit <- rstan::stan(
+                    file=fpath, 
+                    data = stan_data,
+                    chains = chains,
+                    iter = iter,
+                    warmup = warmup,
+                    thin = thin,
+                    seed = seed, 
+                    ...
+                    )
+    model_obj$fit_res$stan_fit <- p2_fit
+    s <- create_summary(model_obj)
+    model_obj$fit_res$summary <- s$summary
+    model_obj$fit_res$par_labels <- s$par_labels
+
 
     return(model_obj)
 }
@@ -292,16 +291,18 @@ fit.Mp2Model <- function(model_obj, chains = 4, iter = 200, warmup = floor(iter/
 #'
 #' @param model_obj The model object for which the summary is to be created.
 #' @return A list containing the fixed and random effects summaries, along with parameter labels.
+#' @export
 create_summary <- function(model_obj) {
     pair_lab= model_obj$pair_lab
     dep_lab = model_obj$dep_lab
     stan_data = model_obj$fit_res$stan_data
     p2_fit = model_obj$fit_res$stan_fit
     fixed_summary <- make_fixed_summary(p2_fit, stan_data, dep_lab, pair_lab)
+    random_summary <- make_random_summary(p2_fit, dep_lab)
     correlation_summary <- make_correlation_summary(p2_fit, dep_lab)
     scale_sigma_summary <- make_scale_sigma_summary(p2_fit, dep_lab)         
-    summary <- list("fixed" = fixed_summary$summary, "correlation" = correlation_summary$summary, "sigma" = scale_sigma_summary$summary)
-    par_labels <- rbind(fixed_summary$par_labels, correlation_summary$par_labels, scale_sigma_summary$par_labels)
+    summary <- list("fixed" = fixed_summary$summary, "correlation" = correlation_summary$summary, "sigma" = scale_sigma_summary$summary, "random" = random_summary$summary)
+    par_labels <- rbind(fixed_summary$par_labels, correlation_summary$par_labels, scale_sigma_summary$par_labels, random_summary$par_labels)
     rownames(par_labels) <- NULL
     return(list(summary = summary, par_labels = par_labels))
 }
@@ -497,6 +498,41 @@ make_scale_sigma_summary <- function(fit, outcome) {
     Parameter = old_names,
     Label = rownames(scale_sigma))
     return(list("summary" = res, "par_labels" = P))
+}
+
+#' More actions
+#' @param fit rstan fit object: fitted stan object
+#' @param outcome vector: the "outcome" attribute of the Mp2Model object, names of the layers of the multiplex network
+#' @return a matrix of the model output summary of the random parameters (the estimated variance-covariance matrix)
+make_random_summary <- function(fit, outcome) {
+    #extract all the entries of the varcov matrix from the p2 fit 
+    sigma_raw <- extract_model_info(fit, pattern="Sigma")
+    old_names <- rownames(sigma_raw)
+    #names of the actor vars 
+    new_names <- c(outer(c("sender:", "receiver:"),outcome, FUN=paste0))
+    res <- sigma_raw
+    for (name in rownames(sigma_raw)) {
+        name_string = strsplit(name, "")[[1]]
+        row = name_string[7]
+        col = name_string[9]
+        #remove all the repeated entries because the var-covar matrix is symmetrical 
+        if (row > col) {
+            res = res[-which(rownames(res) == name),]
+        }
+    }
+
+        rename_sigma <- function(name) {
+        name_string = strsplit(name, "")[[1]]
+        row = name_string[7]
+        col = name_string[9]
+        new_name <- paste(new_names[as.numeric(row)], new_names[as.numeric(col)], sep = "_")
+        return(new_name)
+    }
+      rownames(res) <- sapply(rownames(res), rename_sigma)
+        P <- data.frame(
+        Parameter = old_names,
+        Label = sapply(old_names, rename_sigma))
+        return(list("summary" = res, "par_labels" = P))
 }
 
 #' Extracts draws from a Stan model fit
