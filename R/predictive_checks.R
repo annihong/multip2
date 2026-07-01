@@ -416,7 +416,8 @@ gof_plot <- function (sim_stat_res, net_lab, center=FALSE, scale=FALSE, violin=T
 		main=paste("Goodness of Fit of",
 				 attr(sim_stat_res,"network_statistic_name"), " for ", net_lab, sep=" ")
 	} else {
-		main=args$main
+		class=args$main
+        main=paste(class, net_lab, sep=": ")
 	}
 
 	x <- sim_stat_res[[net_lab]]
@@ -487,8 +488,9 @@ gof_plot <- function (sim_stat_res, net_lab, center=FALSE, scale=FALSE, violin=T
 	} 
     
     if (is.null(args$xlab)) {
-		xlabel = paste( paste("p:",
-						collapse = " "), collapse = "\n")
+		# xlabel = paste( paste("p:",
+		# 				collapse = " "), collapse = "\n")
+        xlabel = ""
 	} else {
 		xlabel = args$xlab
         }
