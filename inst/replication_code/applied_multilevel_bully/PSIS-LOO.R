@@ -115,25 +115,39 @@ run_psis_loo <- function(fit_file, stan_data, gq_model, label) {
 
 stan_data_empty <- set_gq_flags(build_stan_data(layer_covar = FALSE, group_covar = FALSE))
 stan_data_group_only <- set_gq_flags(build_stan_data(layer_covar = FALSE, group_covar = TRUE))
+stan_data_full <- set_gq_flags(build_stan_data(layer_covar = TRUE, group_covar = TRUE))
 
 # both models must be evaluated on the same outcomes for LOO to be comparable
 stopifnot(identical(stan_data_empty$y_obs, stan_data_group_only$y_obs))
+stopifnot(identical(stan_data_empty$y_obs, stan_data_full$y_obs))
+
 
 ###### PSIS-LOO ##########
 
 # a compile (if not cached by auto_write), not a fit
 gq_model <- rstan::stan_model("./inst/stan/multilevel_multiplex_p2_uncentered.stan")
 
-loo_empty <- run_psis_loo(file.path(fit_dir, "bully1_2000_empty.Rds"), stan_data_empty, gq_model, "empty")
-loo_group_only <- run_psis_loo(file.path(fit_dir, "bully1_2000group_only.Rds"), stan_data_group_only, gq_model, "group_only")
+# loo_empty <- run_psis_loo(file.path(fit_dir, "bully1_2000_empty.Rds"), stan_data_empty, gq_model, "empty")
+# loo_group_only <- run_psis_loo(file.path(fit_dir, "bully1_2000group_only.Rds"), stan_data_group_only, gq_model, "group_only")
 
-saveRDS(loo_empty, file.path(fit_dir, "loo_bully1_2000_empty.Rds"))
-saveRDS(loo_group_only, file.path(fit_dir, "loo_bully1_2000_group_only.Rds"))
+
+loo_full <- run_psis_loo(file.path(fit_dir, "bully1_2000full.Rds"), stan_data_full, gq_model, "full")
+
+# saveRDS(loo_empty, file.path(fit_dir, "loo_bully1_2000_empty.Rds"))
+# saveRDS(loo_full, file.path(fit_dir, "loo_bully1_2000_full.Rds"))
+readRDS(file.path(fit_dir, "loo_bully1_2000_empty.Rds")) -> loo_empty
+readRDS(file.path(fit_dir, "loo_bully1_2000_full.Rds")) -> loo_full
+readRDS(file.path(fit_dir, "loo_bully1_2000_group_only.Rds")) -> loo_group_only
+
 
 ###### comparison ##########
-
+print("empty model:")
 print(loo_empty)
+print("group-only model:")
 print(loo_group_only)
+print("full model:")
+print(loo_full)
 
-comparison <- loo::loo_compare(list(empty = loo_empty, group_only = loo_group_only))
+comparison <- loo::loo_compare(list(empty = loo_empty, group_only = loo_group_only, full = loo_full))
 print(comparison, simplify = FALSE)
+print(comparison, simplify = TRUE)
