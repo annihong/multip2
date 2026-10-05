@@ -144,6 +144,9 @@ filtered_df <- results_df %>%
   filter(wave == 4, missing_gender == 0, bully1_rev_density > 0, bully1_density > 0) %>%
   unique()
 
+  # results_df %>% 
+  # filter(wave == 4,bully1_rev_density == 0 |bully1_density == 0) %>% unique()
+
 
 write.csv(filtered_df, file = "/home/annihong/projects/multip2/data-raw/bully/filtered_df_no_missing_wave_4_bully1.csv")
 
