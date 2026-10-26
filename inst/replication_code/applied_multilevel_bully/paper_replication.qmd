@@ -133,8 +133,8 @@ df_long <- summary_df %>%
                names_to = "degree_type",
                values_to = "degree") %>%
   mutate(degree_type = recode(degree_type,
-    "outdeg_bully1" = "Average degree (bully perspective)",
-    "outdeg_bully1_rev" = "Average degree (victim perspective)",
+    "outdeg_bully1" = "Avg degree (bully)",
+    "outdeg_bully1_rev" = "Avg degree (victim)",
   )) 
 
   p <- ggplot(df_long, aes(x = class_size, y = degree, fill = degree_type, color = degree_type)) +
@@ -174,7 +174,7 @@ df_long <- summary_df %>%
 ```
 
 
-
+```{r}
 df_long <- summary_df %>%
   pivot_longer(cols = c(outdeg_bully1, outdeg_bully1_rev, indeg_bully1, indeg_bully1_rev),
                names_to = "degree_type",
@@ -291,8 +291,12 @@ class_wave_title <- paste(class, WAVE, sep = "_")
 
 ```
 ```{r}
+frame_col = "black"
+ frame_lwd = 2
+
 extract_last_n_char <- function(x, n){
-  substr(x, nchar(x) - n + 1, nchar(x))
+  # substr(x, nchar(x) - n + 1, nchar(x))
+  return("")
 }
 #####visualize the networks #####
 titles <- c("Sender-Target (sender)","Target-Sender (perception)")
@@ -319,6 +323,7 @@ for (i in 1:length(M_net)){
   units= "in",
   res = 300)
 par(mar = c(0, 0, 0, 0))
+
   net <- igraph::simplify(M_net[[i]])
   V(net)$types <- types
   V(net)$label.cex <- 1
@@ -328,6 +333,7 @@ vertex.size=17,vertex.frame.color="black",
 vertex.color=colors[V(net)$types],
 layout = l,
 margin = c(0, 0, 0, 0))
+box(which = "figure", col = frame_col, lwd = frame_lwd)
 dev.off()
 }
 png(filename=paste0("/home/annihong/projects/multip2/inst/replication_code/applied_multilevel_bully/", class_wave_title,"retaliation_intersection.png"), height = 3,
@@ -342,18 +348,21 @@ V(net)$label.cex <- 1
   plot(net, edge.arrow.size=.3,edge.color="#6b6b6b", vertex.label=unlist(lapply(names(V(net)), extract_last_n_char, n=2)), vertex.size=17,vertex.frame.color="black",
 vertex.color=colors[V(net)$types], layout = l,
   margin = c(0, 0, 0, 0))
+  box(which = "figure", col = frame_col, lwd = frame_lwd)
 dev.off()
 png(filename=paste0("/home/annihong/projects/multip2/inst/replication_code/applied_multilevel_bully/", class_wave_title,"perception_intersection.png"), height = 3,
   width= 3,
   units= "in",
   res = 300)
   par(mar = c(0, 0, 0, 0))
+  box(which = "figure", col = frame_col, lwd = frame_lwd)
 net = intersection(net1 = igraph::simplify(M_net_transpose[[1]]),net2 = igraph::simplify(M_net_transpose[[2]]))
 V(net)$types <- types
 V(net)$label.cex <- 1
   plot(net, edge.arrow.size=.3,edge.color="#6b6b6b", vertex.label=unlist(lapply(names(V(net)), extract_last_n_char, n=2)), vertex.size=17,vertex.frame.color="black",
 vertex.color=colors[V(net)$types], layout = l,
   margin = c(0, 0, 0, 0))
+  box(which = "figure", col = frame_col, lwd = frame_lwd)
 dev.off()
 
 #####visualize the networks end #####
